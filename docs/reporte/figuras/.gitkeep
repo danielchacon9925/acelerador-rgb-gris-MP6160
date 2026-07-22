@@ -1,9 +1,0 @@
-Colocar aquí las figuras del reporte (diagramas de HLS, capturas de reportes de
-síntesis, etc.) y referenciarlas desde el .tex con:
-
-    \begin{figure}[H]
-      \centering
-      \includegraphics[width=0.85\textwidth]{figuras/nombre.png}
-      \caption{Descripción de la figura.}
-      \label{fig:etiqueta}
-    \end{figure}

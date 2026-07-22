@@ -248,11 +248,7 @@ acelerador-rgb-gris-MP6160/
 │
 ├── docs/
 │   ├── diagrama_bloques.txt           Diagrama de bloques del prototipo virtual
-│   ├── reference_output_gray.raw      Salida de referencia (Evaluación 1)
-│   └── reporte/                       Reporte técnico en LaTeX
-│       ├── reporte_MP6160.tex
-│       ├── COMO_COMPILAR.txt
-│       └── figuras/
+│   └── reference_output_gray.raw      Salida de referencia (Evaluación 1)
 │
 └── scripts/
     └── cross_check.sh                 Verificación cruzada HLS ↔ VP ↔ Eval 1
@@ -870,19 +866,3 @@ Vitis HLS** (simulación C, síntesis y co-simulación C/RTL): los resultados de
 herramienta, no de estimaciones. La fórmula de conversión proviene del trabajo propio
 de la evaluación anterior.
 
----
-
-## Reporte técnico
-
-El reporte en LaTeX se encuentra en [`docs/reporte/`](docs/reporte/). Para compilarlo:
-
-```bash
-cd docs/reporte
-pdflatex reporte_MP6160.tex && pdflatex reporte_MP6160.tex
-```
-
-Los bloques pendientes se localizan con:
-
-```bash
-grep -n "pendiente{" docs/reporte/reporte_MP6160.tex
-```
