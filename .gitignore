@@ -1,0 +1,32 @@
+# ---- gem5 (se clona con virtual_prototype/scripts/build_gem5.sh) ----
+/gem5/
+m5out/
+
+# ---- artefactos de compilacion del prototipo virtual ----
+virtual_prototype/sw/*.o
+virtual_prototype/sw/*.elf
+virtual_prototype/sw/*.dump
+virtual_prototype/sw/*.bin
+virtual_prototype/verify/tb_standalone
+
+# ---- artefactos de Vitis HLS ----
+hls/rgb2gray_hls/
+hls/*.log
+hls/*.jou
+vitis_hls.log
+*.tcl.log
+
+# ---- LaTeX ----
+docs/reporte/*.aux
+docs/reporte/*.log
+docs/reporte/*.out
+docs/reporte/*.toc
+docs/reporte/*.lof
+docs/reporte/*.lot
+docs/reporte/*.fls
+docs/reporte/*.fdb_latexmk
+docs/reporte/*.synctex.gz
+
+# ---- sistema ----
+.DS_Store
+*~

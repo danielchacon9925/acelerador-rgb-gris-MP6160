@@ -1,0 +1,53 @@
+DIAGRAMA DE BLOQUES -- Prototipo virtual ARM64 + acelerador SystemC (gem5)
+==========================================================================
+
+   +===========================================================================+
+   |                        gem5  (SystemC_Kernel)                             |
+   |                                                                           |
+   |   +---------------------+                                                 |
+   |   |   CPU ARM64 (Armv8) |   corre sw/accel_app.elf (bare-metal en C)      |
+   |   |   AtomicSimpleCPU   |                                                 |
+   |   +----------+----------+                                                 |
+   |              | request                                                    |
+   |              v                                                            |
+   |        +-----+---------------------------------------------------+        |
+   |        |                 membus  (SystemXBar)                    |        |
+   |        +--+-------------------+-------------------------+--------+        |
+   |           |                   |                         |                 |
+   |           v                   v                         v                 |
+   |   +-------+------+    +-------+--------+     +----------+-----------+      |
+   |   | DRAM         |    | UART PL011     |     | Gem5ToTlmBridge32    |      |
+   |   | SimpleMemory |    | 0x1c090000     |     | rango: 0x2F000000    |      |
+   |   | 0x80000000   |    | (consola)      |     |        +0x1000       |      |
+   |   +--------------+    +----------------+     +----------+-----------+      |
+   |                                                         | TLM-2.0         |
+   |. . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . . . . . .|
+   |  frontera gem5 <-> SystemC                              v                 |
+   |                                              +----------+-----------+     |
+   |                                              |   ImgAccel (SystemC) |     |
+   |                                              |   sc_img_accel.cc    |     |
+   |                                              |                      |     |
+   |                                              |  tSocket (target 32) |     |
+   |                                              |  + TlmTargetWrapper  |     |
+   |                                              |                      |     |
+   |                                              |  Registros:          |     |
+   |                                              |   DIR_IN/OUT/NUM_PIX |     |
+   |                                              |   CTRL / STATUS / ID |     |
+   |                                              |                      |     |
+   |                                              |  SC_THREAD proceso():|     |
+   |                                              |   rgb_a_gris (BT.601)|     |
+   |                                              +----+-------------+---+     |
+   +===================================================|=============|=========+
+                                                       | cargar      | guardar
+                                                       v             v
+                                          +------------+--+   +------+---------+
+                                          | input_1080p  |   | output_1080p   |
+                                          | .rgb (6.2 MB)|   | _gray.raw(2 MB)|
+                                          +--------------+   +----------------+
+                                            Almacenamiento persistente (carpeta host)
+
+Flujo de control (TLM-2.0, sentido unico CPU -> acelerador):
+  La CPU ARM64 programa los registros por MMIO; cada acceso cruza el membus y el
+  puente Gem5ToTlmBridge32, que lo entrega como transaccion TLM al tSocket del
+  acelerador. El movimiento de pixeles lo hace el acelerador contra los archivos
+  del host, por lo que no se requiere un master transactor de vuelta hacia gem5.

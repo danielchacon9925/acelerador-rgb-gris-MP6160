@@ -1,0 +1,1254 @@
+%==============================================================================
+%  Evaluacion Corta 2 -- Diseno de Alto Nivel (MP6160)
+%  Reporte tecnico: HLS + Prototipo Virtual
+%
+%  ESTRUCTURA:
+%    Parte I  -> Implementacion en HLS      (PENDIENTE: la completa el equipo de HLS)
+%    Parte II -> Prototipo Virtual          (COMPLETA)
+%    Parte III-> Correspondencia y verificacion cruzada (parcialmente pendiente)
+%
+%  COMPILAR:   pdflatex reporte_MP6160.tex   (dos veces, para el indice)
+%           o  latexmk -pdf reporte_MP6160.tex
+%==============================================================================
+\documentclass[11pt,letterpaper]{article}
+
+%------------------------- Codificacion e idioma ------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noquoting]{babel}
+\usepackage{lmodern}
+
+%------------------------------ Geometria -------------------------------------
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+% Margen extra de elasticidad: evita desbordes por identificadores largos
+% en \texttt{} que no admiten division silabica.
+\setlength{\emergencystretch}{3em}
+
+%------------------------------- Graficos -------------------------------------
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{xcolor}
+
+%-------------------------------- Tablas --------------------------------------
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{multirow}
+
+%-------------------------------- Codigo --------------------------------------
+\usepackage{listings}
+
+%------------------------------ Utilidades ------------------------------------
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{caption}
+\usepackage[colorlinks=true,linkcolor=azulunc,citecolor=azulunc,%
+            urlcolor=azulunc]{hyperref}
+
+%------------------------------- Colores --------------------------------------
+\definecolor{azulunc}{HTML}{0F4C81}
+\definecolor{verdeok}{HTML}{2E7D32}
+\definecolor{rojoerr}{HTML}{B00020}
+\definecolor{grisfondo}{HTML}{F2F3F5}
+\definecolor{griscom}{HTML}{6A737D}
+\definecolor{amarpen}{HTML}{FFF8E1}
+\definecolor{bordepen}{HTML}{F9A825}
+
+%--------------------------- Estilo de listings -------------------------------
+\lstdefinestyle{base}{
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{grisfondo},
+  commentstyle=\color{griscom}\itshape,
+  keywordstyle=\color{azulunc}\bfseries,
+  stringstyle=\color{verdeok},
+  numberstyle=\tiny\color{griscom},
+  breaklines=true,
+  breakatwhitespace=false,
+  showstringspaces=false,
+  tabsize=4,
+  frame=leftline,
+  framerule=1.2pt,
+  rulecolor=\color{azulunc},
+  xleftmargin=10pt,
+  framexleftmargin=10pt,
+  aboveskip=10pt,
+  belowskip=10pt,
+  captionpos=b,
+  literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+           {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+           {ñ}{{\~n}}1 {Ñ}{{\~N}}1 {ü}{{\"u}}1 {°}{{$^\circ$}}1
+}
+\lstset{style=base}
+\lstdefinestyle{consola}{style=base,language=,rulecolor=\color{verdeok}}
+% Estilo para diagramas ASCII anchos (mas de 78 columnas)
+\lstdefinestyle{diagrama}{style=base,language=,basicstyle=\ttfamily\scriptsize}
+\lstdefinestyle{cstyle}{style=base,language=C}
+\lstdefinestyle{cppstyle}{style=base,language=C++}
+\lstdefinestyle{pystyle}{style=base,language=Python}
+\lstdefinestyle{shstyle}{style=base,language=bash}
+
+%---------------------- Caja para bloques pendientes --------------------------
+\newcommand{\pendiente}[1]{%
+  \begin{center}
+  \fcolorbox{bordepen}{amarpen}{%
+    \begin{minipage}{0.93\textwidth}
+      \vspace{2pt}
+      \textbf{\textcolor{bordepen}{$\blacktriangleright$ PENDIENTE:}} #1
+      \vspace{2pt}
+    \end{minipage}}
+  \end{center}
+  \vspace{4pt}
+}
+
+%------------------------------ Encabezados -----------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{griscom}{MP6160 -- Evaluación Corta 2}}
+\fancyhead[R]{\small\textcolor{griscom}{HLS y Prototipos Virtuales}}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+%==============================================================================
+\begin{document}
+%==============================================================================
+
+%------------------------------- PORTADA --------------------------------------
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+
+{\large\scshape Instituto Tecnológico de Costa Rica\par}
+\vspace{0.3cm}
+{\large Escuela de Ingeniería Electrónica\par}
+\vspace{2.5cm}
+
+{\color{azulunc}\rule{\textwidth}{1.5pt}}
+\vspace{0.6cm}
+
+{\Huge\bfseries Acelerador de Conversión\\[0.2cm] RGB a Escala de Grises\par}
+\vspace{0.5cm}
+{\Large Implementación en HLS y Prototipo Virtual sobre gem5\par}
+
+\vspace{0.6cm}
+{\color{azulunc}\rule{\textwidth}{1.5pt}}
+
+\vspace{2cm}
+
+{\large\textbf{Evaluación Corta 2}\par}
+\vspace{0.3cm}
+{\large Diseño de Alto Nivel --- MP6160\par}
+{\large II Cuatrimestre 2026\par}
+
+\vspace{2cm}
+
+\begin{tabular}{r l}
+\textbf{Profesor:} & Luis G. León-Vega, Ph.D. \\[0.35cm]
+\textbf{Estudiantes:} & \rule{6cm}{0.4pt} \\[0.35cm]
+                      & \rule{6cm}{0.4pt} \\[0.35cm]
+                      & \rule{6cm}{0.4pt} \\
+\end{tabular}
+
+\vfill
+{\large \today\par}
+\end{titlepage}
+
+%-------------------------------- INDICE --------------------------------------
+\tableofcontents
+\newpage
+
+%==============================================================================
+\section{Introducción}
+%==============================================================================
+
+El presente reporte documenta el desarrollo de un acelerador de procesamiento de
+imagen que convierte una imagen en formato RAW RGB de resolución 1080p a escala
+de grises. El trabajo parte del modelo a nivel de transacciones desarrollado en
+la evaluación anterior (SystemC) y lo proyecta en dos direcciones
+complementarias:
+
+\begin{enumerate}[leftmargin=*]
+  \item Una \textbf{implementación de hardware mediante síntesis de alto nivel}
+        (HLS) con Vitis 2024.1, con la tarjeta AMD Kria KV260 como objetivo.
+  \item Un \textbf{prototipo virtual} basado en ARM64, construido sobre el
+        simulador gem5, donde el acelerador se integra como periférico
+        \emph{memory-mapped} mediante TLM-2.0 y es controlado por un programa
+        escrito en C.
+\end{enumerate}
+
+Ambas implementaciones derivan del mismo modelo de referencia, por lo que deben
+producir resultados funcionalmente equivalentes. La Parte~\ref{part:correspondencia}
+documenta la verificación cruzada que lo comprueba.
+
+\subsection{Flujo funcional del sistema}
+
+El sistema implementa el siguiente flujo, heredado de la evaluación anterior:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item Cargar una imagen desde un almacenamiento persistente.
+  \item La imagen está en formato RAW RGB, resolución 1080p
+        ($1920 \times 1080$).
+  \item Indicar al acelerador la dirección base de entrada, la de salida y la
+        cantidad de píxeles a procesar.
+  \item El acelerador convierte la imagen a escala de grises.
+  \item El resultado se almacena nuevamente en disco.
+\end{enumerate}
+
+\subsection{Conversión implementada}
+
+La conversión emplea la luminancia BT.601 evaluada en \textbf{aritmética
+entera}, idéntica en ambas implementaciones:
+
+\begin{equation}
+Y = \frac{77 \cdot R + 150 \cdot G + 29 \cdot B}{256}
+  \equiv (77R + 150G + 29B) \gg 8
+\label{eq:bt601}
+\end{equation}
+
+Los coeficientes $77$, $150$ y $29$ se obtienen al redondear
+$0{,}299 \times 256$, $0{,}587 \times 256$ y $0{,}114 \times 256$
+respectivamente. El uso de aritmética entera
+--- y no de punto flotante --- es un requisito para que ambas implementaciones
+sean equivalentes bit a bit, según se detalla en la
+Sección~\ref{sec:bitexact}.
+
+\subsection{Parámetros de la imagen}
+
+\begin{table}[H]
+\centering
+\caption{Dimensiones de los datos procesados}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Resolución                      & $1920 \times 1080$ \\
+Total de píxeles                & 2\,073\,600 \\
+Bytes por píxel (entrada RGB)   & 3 \\
+Bytes por píxel (salida gris)   & 1 \\
+Tamaño de la imagen de entrada  & 6\,220\,800 bytes \\
+Tamaño de la imagen de salida   & 2\,073\,600 bytes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\newpage
+%==============================================================================
+\part{Implementación en HLS}
+\label{part:hls}
+%==============================================================================
+
+\pendiente{Esta parte completa del documento debe ser desarrollada por el equipo
+encargado de la implementación en HLS. A continuación se proponen las secciones
+que cubren los requisitos del enunciado. Cada una puede ampliarse, reordenarse o
+renombrarse según convenga.}
+
+%------------------------------------------------------------------------------
+\section{Arquitectura del acelerador en HLS}
+%------------------------------------------------------------------------------
+
+\pendiente{Describir la arquitectura propuesta: interfaces empleadas
+(AXI4 Memory-Mapped o AXI4-Stream para datos, AXI4-Lite para control),
+organización de los módulos y decisiones de diseño.}
+
+\subsection{Interfaces de comunicación}
+
+\pendiente{Documentar las interfaces AXI4 y AXI4-Lite: puertos, anchos de bus y
+\emph{pragmas} empleados.}
+
+\subsection{Estructura del \emph{pipeline}}
+
+\pendiente{Mostrar la separación explícita entre las etapas de entrada/salida de
+datos y la etapa de procesamiento, tal como exige el enunciado. Incluir el
+fragmento de código donde se aprecia esta separación y los \emph{pragmas} de
+\texttt{PIPELINE} / \texttt{DATAFLOW} utilizados.}
+
+\subsection{Diagrama de bloques de la implementación}
+
+\pendiente{Insertar el diagrama de bloques de la arquitectura en hardware.}
+
+% Ejemplo de como insertar una figura:
+%
+% \begin{figure}[H]
+%   \centering
+%   \includegraphics[width=0.85\textwidth]{figuras/diagrama_hls.png}
+%   \caption{Arquitectura del acelerador implementado en HLS.}
+%   \label{fig:diagrama-hls}
+% \end{figure}
+
+%------------------------------------------------------------------------------
+\section{Testbench y co-simulación}
+%------------------------------------------------------------------------------
+
+\pendiente{Describir el testbench en C empleado para la co-simulación C/RTL:
+cómo se genera o carga la imagen de prueba, cómo se compara el resultado y qué
+criterio de aceptación se utiliza.}
+
+% \begin{lstlisting}[style=cstyle,caption={Testbench en C para co-simulacion.}]
+% // ... codigo del testbench ...
+% \end{lstlisting}
+
+%------------------------------------------------------------------------------
+\section{Flujo de síntesis y scripts TCL}
+%------------------------------------------------------------------------------
+
+\pendiente{Documentar los scripts TCL que automatizan el flujo completo de HLS
+(creación del proyecto, C-Sim, síntesis, co-simulación y exportación del IP), e
+indicar cómo ejecutarlos.}
+
+% \begin{lstlisting}[style=shstyle,caption={Ejecucion del flujo de HLS.}]
+% vitis_hls -f scripts/run_hls.tcl
+% \end{lstlisting}
+
+%------------------------------------------------------------------------------
+\section{Resultados de síntesis}
+\label{sec:resultados-hls}
+%------------------------------------------------------------------------------
+
+\pendiente{Completar con los datos del reporte de síntesis. Estos valores son
+necesarios además para calibrar el modelo de latencia del prototipo virtual
+(véase la Sección~\ref{sec:latencia-cruzada}).}
+
+\begin{table}[H]
+\centering
+\caption{Resultados de síntesis en Vitis HLS 2024.1 (Kria KV260)}
+\label{tab:sintesis}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Métrica} & \textbf{Valor obtenido} \\
+\midrule
+Frecuencia objetivo          & 250 MHz \\
+Frecuencia alcanzada         & \rule{4cm}{0.4pt} \\
+Periodo estimado             & \rule{4cm}{0.4pt} \\
+\emph{Initiation Interval} (II) & \rule{4cm}{0.4pt} \\
+Latencia total (ciclos)      & \rule{4cm}{0.4pt} \\
+Latencia total ($\mu$s)      & \rule{4cm}{0.4pt} \\
+\midrule
+LUT                          & \rule{4cm}{0.4pt} \\
+FF                           & \rule{4cm}{0.4pt} \\
+BRAM                         & \rule{4cm}{0.4pt} \\
+DSP                          & \rule{4cm}{0.4pt} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Análisis de los resultados de síntesis}
+
+\pendiente{Analizar el uso de recursos, el cumplimiento de la restricción
+temporal de 250 MHz y el comportamiento del \emph{pipeline}.}
+
+%------------------------------------------------------------------------------
+\section{Mapa de registros AXI4-Lite}
+\label{sec:mapa-axi}
+%------------------------------------------------------------------------------
+
+\pendiente{Documentar el mapa de registros generado por Vitis (disponible en el
+archivo de cabecera del \emph{driver} exportado). Esta información se utiliza en
+la Tabla~\ref{tab:correspondencia-registros} para establecer la correspondencia
+con el prototipo virtual.}
+
+\newpage
+%==============================================================================
+\part{Prototipo Virtual}
+\label{part:vp}
+%==============================================================================
+
+Esta parte documenta la construcción, ejecución y verificación del prototipo
+virtual: un sistema ARM64 simulado en gem5 sobre el cual se ejecuta un programa
+en C que controla el acelerador SystemC a través de transacciones TLM-2.0.
+
+%------------------------------------------------------------------------------
+\section{Fundamento: qué es un prototipo virtual}
+%------------------------------------------------------------------------------
+
+Un \textbf{prototipo virtual} es un modelo ejecutable de un sistema de hardware,
+suficientemente fiel como para que el software real se ejecute sobre él antes de
+que el hardware exista físicamente. Su valor consiste en romper la dependencia
+secuencial entre el desarrollo de hardware y el de software: el equipo de
+software recibe un modelo ejecutable del sistema y comienza a trabajar de
+inmediato.
+
+El criterio que determina si un modelo merece esa denominación es directo:
+\emph{¿funcionaría, sin modificaciones, el software escrito para el prototipo
+sobre el chip real?} En esta implementación la respuesta es afirmativa, ya que
+el programa en C no contiene ninguna construcción dependiente de la simulación:
+únicamente lee y escribe direcciones de memoria, exactamente como lo haría un
+controlador sobre silicio.
+
+\subsection{gem5 como plataforma de simulación}
+
+gem5 es un simulador de sistemas de computador: no simula un programa aislado,
+sino una computadora completa --- procesador, jerarquía de memoria, buses y
+periféricos --- con fidelidad suficiente para ejecutar un binario real. En este
+trabajo aporta cuatro elementos:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item Una CPU ARM64 (ARMv8-A) que ejecuta instrucciones ARM reales.
+  \item Una plataforma completa (\texttt{VExpress\_GEM5}) con buses,
+        controlador de interrupciones y UART.
+  \item La capacidad de conectar componentes propios al bus del sistema, que es
+        el mecanismo empleado para integrar el acelerador.
+  \item Un núcleo de SystemC integrado (\texttt{SystemC\_Kernel}) que permite
+        que los módulos SystemC y los componentes de gem5 avancen con el mismo
+        planificador de eventos.
+\end{itemize}
+
+\subsection{Justificación del nivel de abstracción TLM-2.0}
+
+El acelerador podría modelarse a nivel de señales (RTL), pero ello resultaría
+órdenes de magnitud más lento sin aportar información adicional para la
+validación del software: al programa en C no le concierne cómo evolucionan las
+señales internas, sino si al escribir en el registro de control el acelerador
+inicia su operación. TLM-2.0 modela la comunicación como \emph{transacciones}
+--- objetos que encapsulan comando, dirección, datos y longitud --- lo que
+constituye el nivel de abstracción adecuado para un prototipo virtual: rápido y
+exacto en aquello que resulta relevante.
+
+%------------------------------------------------------------------------------
+\section{Arquitectura del prototipo virtual}
+%------------------------------------------------------------------------------
+
+La totalidad del sistema se ejecuta dentro de un único binario de gem5, bajo el
+planificador de \texttt{SystemC\_Kernel}. El camino que recorre un acceso desde
+la CPU hasta el acelerador es el siguiente:
+
+\begin{lstlisting}[style=diagrama,caption={Arquitectura del prototipo virtual.}]
+   +===========================================================================+
+   |                        gem5  (SystemC_Kernel)                             |
+   |   +---------------------+                                                 |
+   |   |   CPU ARM64 (ARMv8) |   ejecuta sw/accel_app.elf (bare-metal, C)      |
+   |   +----------+----------+                                                 |
+   |              | acceso MMIO                                                |
+   |        +-----v---------------------------------------------------+        |
+   |        |                 membus  (SystemXBar)                    |        |
+   |        +--+-------------------+-------------------------+--------+        |
+   |           v                   v                         v                 |
+   |   +-------+------+    +-------+--------+     +----------+-----------+      |
+   |   | DRAM         |    | UART PL011     |     | iobridge --> iobus   |      |
+   |   | 0x80000000   |    | 0x1c090000     |     |          |           |      |
+   |   +--------------+    +----------------+     +----------v-----------+      |
+   |                                              | Gem5ToTlmBridge32    |      |
+   |                                              | rango: 0x2F000000    |      |
+   |                                              +----------+-----------+      |
+   |                                                         | TLM-2.0          |
+   |. . . . . . . . . . frontera gem5 <-> SystemC . . . . . .v . . . . . . . . .|
+   |                                              +----------+-----------+      |
+   |                                              |   ImgAccel (SystemC) |      |
+   |                                              |  tSocket + wrapper   |      |
+   |                                              |  b_transport()       |      |
+   |                                              |  SC_THREAD proceso() |      |
+   |                                              +----+-------------+---+      |
+   +===================================================|=============|==========+
+                                              lee      v             v  escribe
+                                          +------------+--+   +------+---------+
+                                          | input .rgb    |   | output .raw    |
+                                          +---------------+   +----------------+
+                                            Almacenamiento persistente (host)
+\end{lstlisting}
+
+Una característica relevante del diseño es que el acelerador constituye un
+\textbf{\emph{target} puro}: el tráfico TLM circula siempre en sentido CPU
+$\rightarrow$ acelerador. El movimiento de los píxeles lo efectúa el propio
+acelerador contra archivos del sistema anfitrión, de modo que no se requiere un
+\emph{transactor} maestro de retorno hacia gem5.
+
+\subsection{Organización del repositorio}
+
+\begin{table}[H]
+\centering
+\caption{Organización de los archivos del prototipo virtual}
+\begin{tabular}{@{}p{4.9cm}p{9.3cm}@{}}
+\toprule
+\textbf{Ruta} & \textbf{Contenido} \\
+\midrule
+\multicolumn{2}{@{}l}{\itshape Implementación en HLS} \\
+\quad\texttt{hls/} & Fuentes sintetizables, testbench, scripts TCL y reportes
+  de síntesis. \\[2pt]
+\multicolumn{2}{@{}l}{\itshape Prototipo virtual --- \texttt{virtual\_prototype/}} \\
+\quad\texttt{systemc/} & Modelo del acelerador: contrato, modelo SystemC y
+  envoltorio para gem5. \\
+\quad\texttt{sw/} & Programa en C \emph{bare-metal}, arranque, \emph{linker
+  script} y \emph{Makefile}. \\
+\quad\texttt{gem5-config/} & Configuración del SoC: construye el sistema ARM64
+  y conecta el acelerador. \\
+\quad\texttt{verify/} & Banco de pruebas independiente en SystemC puro. \\
+\quad\texttt{scripts/} & Automatización: verificación, compilación y
+  ejecución. \\[2pt]
+\multicolumn{2}{@{}l}{\itshape Compartido} \\
+\quad\texttt{images/} & Imagen RAW RGB de entrada e imagen de salida. \\
+\quad\texttt{docs/} & Diagramas, salida de referencia y este reporte. \\
+\quad\texttt{scripts/} & Verificación cruzada entre ambas implementaciones. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Módulos del acelerador}
+
+El directorio \texttt{virtual\_prototype/systemc/img\_accel\_vp/} contiene seis
+organizados en tres capas funcionales:
+
+\begin{table}[H]
+\centering
+\caption{Módulos que componen el acelerador}
+\begin{tabular}{@{}p{3.5cm}p{2.2cm}p{8.5cm}@{}}
+\toprule
+\textbf{Archivo} & \textbf{Capa} & \textbf{Función} \\
+\midrule
+\texttt{accel\_core.h}    & Contrato   & Constantes puras: mapa de registros,
+  dimensiones y la función de conversión. Sin dependencias de SystemC. \\
+\texttt{accel\_io.h}      & Contrato   & Lectura y escritura de archivos:
+  modela el almacenamiento persistente. \\
+\texttt{sc\_img\_accel.hh}& Modelo     & Declaración del \texttt{SC\_MODULE}:
+  socket TLM, registros internos y evento de arranque. \\
+\texttt{sc\_img\_accel.cc}& Modelo     & Implementación de \texttt{b\_transport()}
+  y del \texttt{SC\_THREAD} de conversión. \\
+\texttt{ImgAccel.py}      & Envoltorio & Descripción del acelerador como
+  \emph{SimObject} de gem5. \\
+\texttt{SConscript}       & Envoltorio & Regla de compilación para el mecanismo
+  \texttt{EXTRAS} de gem5. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La separación entre \emph{contrato} y \emph{modelo} obedece a un objetivo
+concreto: el banco de pruebas independiente incluye el mismo
+\texttt{accel\_core.h}, de manera que lo verificado fuera de gem5 es
+literalmente el mismo código que se ejecuta dentro del prototipo.
+
+%------------------------------------------------------------------------------
+\section{Mapa de memoria y registros}
+\label{sec:mapa-vp}
+%------------------------------------------------------------------------------
+
+\begin{table}[H]
+\centering
+\caption{Mapa de memoria del SoC simulado}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Rango} & \textbf{Periférico} & \textbf{Función} \\
+\midrule
+\texttt{0x1C090000}                 & UART PL011 & Consola del programa en C \\
+\texttt{0x2F000000 -- 0x2F000FFF}   & \texttt{ImgAccel} & Ventana de registros
+  del acelerador \\
+\texttt{0x80000000 \ldots}          & DRAM & Memoria principal; carga y ejecuta
+  el ELF \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Registros del acelerador (base \texttt{0x2F000000})}
+\label{tab:registros-vp}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Offset} & \textbf{Nombre} & \textbf{Acceso} & \textbf{Descripción} \\
+\midrule
+\texttt{0x00} & \texttt{DIR\_IN}     & RW & Base lógica de la imagen de entrada \\
+\texttt{0x04} & \texttt{DIR\_OUT}    & RW & Base lógica de la imagen de salida \\
+\texttt{0x08} & \texttt{NUM\_PIXELS} & RW & Píxeles a procesar (2\,073\,600) \\
+\texttt{0x0C} & \texttt{CTRL}        & WO & bit 0 = \texttt{START} \\
+\texttt{0x10} & \texttt{STATUS}      & RO & bit 0 = \texttt{BUSY},
+                                            bit 1 = \texttt{DONE} \\
+\texttt{0x14} & \texttt{ID}          & RO & Identificador \texttt{0xACCE1111} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La dirección base se encuentra definida en dos ubicaciones que deben mantenerse
+consistentes: \texttt{virtual\_prototype/sw/accel.h} (software) y
+\texttt{virtual\_prototype/gem5-config/vp\_arm.py} (sistema). El registro de
+identificación permite al programa detectar una eventual inconsistencia entre
+ambas.
+
+%------------------------------------------------------------------------------
+\section{Formato de las transacciones}
+%------------------------------------------------------------------------------
+
+Cada acceso MMIO de la CPU a la ventana del acelerador genera una transacción
+\texttt{tlm\_generic\_payload} de 4~bytes. El puente
+\texttt{Gem5ToTlmBridge32} la entrega al método \texttt{b\_transport()}
+del módulo SystemC.
+
+\begin{table}[H]
+\centering
+\caption{Campos del \emph{payload} TLM-2.0}
+\begin{tabular}{@{}p{3.3cm}p{5.3cm}p{6.2cm}@{}}
+\toprule
+\textbf{Campo} & \textbf{Valor} & \textbf{Descripción} \\
+\midrule
+\texttt{command}          & \texttt{TLM\_READ/WRITE\_COMMAND} & Según sea
+  lectura o escritura \\
+\texttt{address}          & Offset dentro de \texttt{0x2F000000} & El puente
+  entrega el offset local \\
+\texttt{data\_ptr}        & Puntero a 4 bytes & Valor del registro \\
+\texttt{data\_length}     & \texttt{4} & Registro de 32 bits \\
+\texttt{streaming\_width} & \texttt{4} & Sin \emph{streaming} \\
+\texttt{byte\_enable\_ptr}& \texttt{nullptr} & No se emplean \emph{byte enables} \\
+\texttt{response\_status} & \texttt{TLM\_OK\_RESPONSE} & Error si
+  \texttt{data\_length} $\neq$ 4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Secuencia de transacciones}
+
+\begin{table}[H]
+\centering
+\caption{Transacciones generadas por el programa en C}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{Paso} & \textbf{Comando} & \textbf{Registro} & \textbf{Valor} &
+\textbf{Sentido} \\
+\midrule
+Identificar & READ  & \texttt{ID} (\texttt{0x14})         & \texttt{0xACCE1111}
+  & acel. $\rightarrow$ CPU \\
+Programar   & WRITE & \texttt{DIR\_IN} (\texttt{0x00})    & \texttt{0}
+  & CPU $\rightarrow$ acel. \\
+Programar   & WRITE & \texttt{DIR\_OUT} (\texttt{0x04})   & \texttt{0}
+  & CPU $\rightarrow$ acel. \\
+Programar   & WRITE & \texttt{NUM\_PIXELS} (\texttt{0x08})& 2\,073\,600
+  & CPU $\rightarrow$ acel. \\
+Arrancar    & WRITE & \texttt{CTRL} (\texttt{0x0C})       & \texttt{0x1}
+  & CPU $\rightarrow$ acel. \\
+Sondear     & READ  & \texttt{STATUS} (\texttt{0x10})     &
+  \texttt{BUSY}/\texttt{DONE} & acel. $\rightarrow$ CPU \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%------------------------------------------------------------------------------
+\section{Diagrama de secuencias}
+%------------------------------------------------------------------------------
+
+\begin{lstlisting}[style=diagrama,caption={Secuencia de operacion del prototipo virtual.}]
+ CPU ARM64 (main.c)      membus        Gem5ToTlmBridge32       ImgAccel (SystemC)
+     |                     |                  |                        |
+     |  MMIO RD 0x2F...14  |                  |                        |
+     |-------------------->|--- TLM READ ---->|----- b_transport ----->|
+     |                     |                  |     ID = 0xACCE1111    |
+     |<--------------------|<-----------------|<-----------------------|
+     |  (verifica ID)      |                  |                        |
+     |                     |                  |                        |
+     |  MMIO WR DIR_IN / DIR_OUT / NUM_PIXELS |                        |
+     |-------------------->|--- TLM WRITE --->|----- b_transport ----->| (guarda)
+     |                     |                  |                        |
+     |  MMIO WR CTRL=START |                  |                        |
+     |-------------------->|--- TLM WRITE --->|----- b_transport ----->| notify()
+     |<-- OK --------------|<-----------------|<-----------------------|    |
+     |                     |                  |          +-------------v-----------+
+     |  bucle:             |                  |          | SC_THREAD proceso():    |
+     |   MMIO RD STATUS    |                  |          |  cargar input .rgb      |
+     |-------------------->|--- TLM READ ---->|--------->|  rgb_a_gris (BT.601)    |
+     |<-- BUSY/DONE -------|<-----------------|<---------|  wait(npix*4 ns)        |
+     |   (repite hasta DONE)                  |          |  guardar output .raw    |
+     |                     |                  |          |  done = true            |
+     |                     |                  |          +-------------------------+
+     |  STATUS & DONE == 1 |                  |                        |
+     |  -> EOT al UART -> gem5 finaliza       |                        |
+\end{lstlisting}
+
+%------------------------------------------------------------------------------
+\section{El programa en C}
+%------------------------------------------------------------------------------
+
+El software se ejecuta en modo \emph{bare-metal}: sin sistema operativo, sin
+biblioteca estándar y con la MMU desactivada, de modo que las direcciones son
+físicas. Esta condición explica tres características del código: la existencia
+de un controlador propio del UART, de una rutina de arranque en ensamblador y de
+un \emph{linker script} explícito.
+
+\subsection{Acceso a los registros}
+
+El acceso al periférico se realiza mediante punteros calificados con
+\texttt{volatile}:
+
+\begin{lstlisting}[style=cstyle,caption={Accesores MMIO (\texttt{sw/accel.h}).}]
+#define ACCEL_BASE   0x2f000000UL
+
+static inline void accel_wr(uint32_t off, uint32_t val)
+{
+    *(volatile uint32_t *)(ACCEL_BASE + off) = val;
+}
+
+static inline uint32_t accel_rd(uint32_t off)
+{
+    return *(volatile uint32_t *)(ACCEL_BASE + off);
+}
+\end{lstlisting}
+
+El calificador \texttt{volatile} resulta indispensable. El compilador, al
+optimizar, presupone que el contenido de la memoria únicamente se modifica
+cuando el propio programa la escribe; bajo esa premisa extraería la lectura del
+registro de estado fuera del bucle de espera, convirtiéndolo en un bucle
+infinito. Al declarar el acceso como \texttt{volatile}, el compilador queda
+obligado a emitir una lectura efectiva del bus en cada iteración.
+
+\subsection{Flujo del programa principal}
+
+\begin{lstlisting}[style=cstyle,caption={Programa principal (\texttt{sw/main.c}), estructura.}]
+int main(void)
+{
+    /* 1) Identificar el periferico */
+    uint32_t id = accel_rd(REG_ID);
+    if (id != MAGIC_ID) {
+        uart_puts("[SW] ERROR: periferico no encontrado\n");
+        return 1;
+    }
+
+    /* 2) Programar los registros de configuracion */
+    accel_wr(REG_DIR_IN,     0);
+    accel_wr(REG_DIR_OUT,    0);
+    accel_wr(REG_NUM_PIXELS, IMG_PIXELS);   /* 1920 x 1080 */
+
+    /* 3) Arrancar el acelerador */
+    accel_wr(REG_CTRL, CTRL_START);
+
+    /* 4) Sondear STATUS hasta que termine */
+    uint32_t status;
+    do {
+        status = accel_rd(REG_STATUS);
+    } while (!(status & ST_DONE));
+
+    uart_puts("[SW] DONE.\n");
+    return 0;
+}
+\end{lstlisting}
+
+La escritura del bit \texttt{START} retorna de forma inmediata: el método
+\texttt{b\_transport()} únicamente notifica un evento, mientras que el
+procesamiento se realiza en un \texttt{SC\_THREAD} independiente. Esto permite
+que la CPU continúe su ejecución y sondee el estado, reproduciendo el
+comportamiento de un periférico real que opera en paralelo con el procesador.
+
+\subsection{Del código C a las transacciones TLM}
+
+El desensamblado del binario permite observar la correspondencia directa entre
+el código fuente y el tráfico generado:
+
+\begin{lstlisting}[style=consola,caption={Bucle de sondeo: codigo C y ensamblador ARM64 generado.}]
+/* C */   accel_wr(REG_CTRL, CTRL_START);
+          do { status = accel_rd(REG_STATUS); } while (!(status & ST_DONE));
+
+/* ASM generado */
+  mov   w1, #0x1
+  str   w1, [x6], #4      // escribe START en CTRL (0x..0c); x6 pasa a 0x..10
+  ...
+  ldr   w0, [x6]          // lee STATUS (0x2f000010)  <-- transaccion TLM
+  tbz   w0, #1, <volver>  // si el bit DONE es 0, repite
+\end{lstlisting}
+
+Se aprecia que la instrucción \texttt{ldr} permanece \emph{dentro} del bucle: es
+la evidencia, en el binario generado, de que el calificador \texttt{volatile}
+cumplió su función.
+
+%------------------------------------------------------------------------------
+\section{Construcción y ejecución}
+%------------------------------------------------------------------------------
+
+\subsection{Requisitos}
+
+\begin{lstlisting}[style=shstyle,caption={Dependencias del entorno.}]
+# SystemC
+sudo apt install -y libsystemc-dev g++
+# Cross-compiler ARM64
+sudo apt install -y gcc-aarch64-linux-gnu
+# Dependencias de gem5
+sudo apt install -y build-essential scons python3-dev git m4 \
+    zlib1g-dev libprotobuf-dev protobuf-compiler libboost-all-dev pkg-config
+\end{lstlisting}
+
+\subsection{Procedimiento}
+
+\begin{lstlisting}[style=shstyle,caption={Construccion y ejecucion del prototipo virtual.}]
+cd virtual_prototype
+
+# 1) Verificar el acelerador (sin gem5)
+./scripts/verify.sh
+
+# 2) Compilar el programa en C -> sw/accel_app.elf
+./scripts/build_sw.sh
+
+# 3) Compilar gem5 con el acelerador integrado (EXTRAS)
+yes | ./scripts/build_gem5.sh
+
+# 4) Ejecutar el prototipo virtual completo
+./scripts/run_vp.sh
+\end{lstlisting}
+
+El paso 3 emplea el mecanismo \texttt{EXTRAS} de gem5, que permite compilar
+código externo dentro del binario del simulador sin modificar su árbol de
+fuentes:
+
+\begin{lstlisting}[style=shstyle]
+scons build/ARM/gem5.opt EXTRAS=<repo>/systemc/img_accel_vp -j$(nproc)
+\end{lstlisting}
+
+\newpage
+%------------------------------------------------------------------------------
+\section{Resultados}
+\label{sec:resultados-vp}
+%------------------------------------------------------------------------------
+
+\subsection{Entorno de ejecución}
+
+\begin{table}[H]
+\centering
+\caption{Entorno en el que se obtuvieron los resultados}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Componente} & \textbf{Versión} \\
+\midrule
+Sistema operativo   & Debian 13 (Trixie) \\
+gem5                & 25.1.0.1 \\
+SystemC             & 3.0.2 (Accellera) \\
+Cross-compiler      & \texttt{aarch64-linux-gnu-gcc} 14.2.0 \\
+CPU simulada        & \texttt{AtomicSimpleCPU}, ARMv8-A, 1 GHz \\
+Plataforma          & \texttt{VExpress\_GEM5\_V2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Verificación del acelerador de forma independiente}
+
+Previo a la integración, el acelerador se verificó mediante un banco de pruebas
+en SystemC puro que reproduce el mismo protocolo de registros que ejercerá la
+CPU ARM64:
+
+\begin{lstlisting}[style=consola,caption={Salida de \texttt{./scripts/verify.sh}.}]
+        SystemC 3.0.2-Accellera
+[CPU] ID leido = 0xacce1111
+[CPU] registros programados (npix=2073600)
+[CPU] START enviado, sondeando STATUS...
+[CPU] DONE tras 9 sondeos (9 ms)
+[TB] simulacion OK
+>> Comparando con la referencia...
+OK: la salida es identica bit a bit a la referencia.
+\end{lstlisting}
+
+El acelerador respondió con el identificador esperado, aceptó la configuración,
+inició la operación al recibir \texttt{START} y señalizó su terminación tras
+nueve sondeos del registro de estado.
+
+\subsection{Compilación del programa en C}
+
+\begin{table}[H]
+\centering
+\caption{Atributos del binario generado}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Atributo} & \textbf{Valor} \\
+\midrule
+Formato / Arquitectura & ELF64 / AArch64 \\
+Tipo                   & \texttt{EXEC} (ejecutable, \emph{bare-metal}) \\
+Punto de entrada       & \texttt{0x80000000} \\
+Intérprete dinámico    & Ninguno \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La ausencia de intérprete dinámico confirma que el binario es efectivamente
+\emph{bare-metal} y puede ser cargado directamente por gem5.
+
+\subsection{Ejecución del prototipo virtual completo}
+
+\begin{lstlisting}[style=consola,caption={Salida de \texttt{./scripts/run\_vp.sh}.}]
+gem5 Simulator System.  https://www.gem5.org
+gem5 version 25.1.0.1
+...
+info: kernel located at: .../sw/accel_app.elf
+[ImgAccel] periferico en linea (in=.../input_1080p.rgb,
+                                out=.../output_1080p_gray.raw)
+systemc_kernel.system.terminal: Listening for connections on port 3456
+== Prototipo virtual ARM64 + acelerador SystemC: iniciando ==
+== Simulacion terminada @ tick 1312000: UART received EOT ==
+>> Salida generada: .../images/output/output_1080p_gray.raw
+-rw-r--r-- 1 daniel daniel 2073600 .../output_1080p_gray.raw
+\end{lstlisting}
+
+La simulación finalizó de forma controlada mediante el byte \texttt{EOT}
+(\texttt{0x04}) que la rutina de arranque envía al UART al retornar de
+\texttt{main()}. Ello confirma que el programa completó su ejecución: alcanzó el
+final del bucle de sondeo, lo que a su vez implica que el acelerador señalizó su
+terminación.
+
+\subsection{Comprobación de resultados}
+\label{sec:comprobacion}
+
+La verificación de correctitud se realizó comparando la imagen generada por el
+prototipo virtual con la salida del modelo de referencia de la evaluación
+anterior:
+
+\begin{lstlisting}[style=consola,caption={Verificacion mediante suma de comprobacion.}]
+$ md5sum images/output/output_1080p_gray.raw docs/reference_output_gray.raw
+
+45041cfcf4f0f1f0d8cdc2230acee01b  images/output/output_1080p_gray.raw
+45041cfcf4f0f1f0d8cdc2230acee01b  docs/reference_output_gray.raw
+\end{lstlisting}
+
+\begin{table}[H]
+\centering
+\caption{Resultados de la verificación}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Criterio} & \textbf{Resultado} & \textbf{Estado} \\
+\midrule
+Tamaño de la salida   & 2\,073\,600 bytes & \textcolor{verdeok}{Correcto} \\
+Suma MD5              & Coincide con la referencia &
+  \textcolor{verdeok}{Correcto} \\
+Bytes discrepantes    & 0 de 2\,073\,600 & \textcolor{verdeok}{Correcto} \\
+Terminación           & \texttt{UART received EOT} &
+  \textcolor{verdeok}{Correcto} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La coincidencia de las sumas de comprobación indica que los 2\,073\,600 bytes de
+ambas imágenes son idénticos. Se concluye que la migración del modelo a una
+arquitectura ARM64 con comunicación TLM-2.0 preservó íntegramente la
+funcionalidad del acelerador original.
+
+\subsection{Análisis de los resultados}
+
+\subsubsection{Correctitud funcional}
+
+La equivalencia bit a bit constituye el criterio más estricto de verificación
+disponible: no admite tolerancias ni aproximaciones. Su cumplimiento demuestra
+que las adaptaciones introducidas al modelo --- el envoltorio del socket para el
+puente de gem5 y la modificación del camino de datos --- no alteraron la
+función de transferencia del acelerador.
+
+\subsubsection{Modelo temporal}
+
+El acelerador modela su latencia de procesamiento como
+$t = N_{\text{px}} \times 4\,\text{ns}$, correspondiente a un píxel por ciclo a
+250 MHz. Para la imagen completa:
+
+\begin{equation}
+t = 2\,073\,600 \times 4\,\text{ns} = 8{,}29\,\text{ms}
+\end{equation}
+
+Este valor asume un \emph{Initiation Interval} unitario en el
+\emph{pipeline}. La Sección~\ref{sec:latencia-cruzada} contrasta esta
+suposición con los resultados de síntesis.
+
+\subsubsection{Validez del prototipo}
+
+El programa en C no contiene ninguna construcción específica de la simulación:
+únicamente accede a direcciones de memoria mediante punteros \texttt{volatile}.
+En consecuencia, el mismo código fuente, recompilado, sería válido para
+controlar el IP sintetizado sobre la tarjeta KV260 --- modificando únicamente la
+dirección base del periférico. Esta propiedad es precisamente la que otorga
+valor a un prototipo virtual.
+
+%------------------------------------------------------------------------------
+\section{Problemas de integración encontrados}
+%------------------------------------------------------------------------------
+
+Durante la puesta en marcha se presentaron dos incidencias cuya resolución
+resulta ilustrativa del funcionamiento del entorno.
+
+\subsection{Generación de un ejecutable con enlace dinámico}
+
+Al ejecutar el prototipo por primera vez, gem5 reportó:
+
+\begin{lstlisting}[style=consola]
+fatal: Failed to open file /lib/ld-linux-aarch64.so.1.
+\end{lstlisting}
+
+\textbf{Causa.} El compilador GCC 14 genera de forma predeterminada ejecutables
+independientes de posición (PIE), que requieren un intérprete dinámico
+inexistente en un entorno \emph{bare-metal}. Cabe señalar que las opciones
+\texttt{-nostdlib} y \texttt{-nostartfiles} no desactivan este comportamiento.
+
+\textbf{Solución.} Incorporar las opciones \texttt{-fno-pie}, \texttt{-no-pie} y
+\texttt{-static} al proceso de compilación. La verificación se realiza mediante
+\texttt{readelf -l}, comprobando la ausencia de un segmento \texttt{INTERP}.
+
+\subsection{Conflicto de rangos de direcciones}
+
+\begin{lstlisting}[style=consola]
+fatal: membus has two ports responding within range [0x2f000000:0x80000000]:
+	system.iobridge.cpu_side_port
+	system.tlm_bridge.gem5
+\end{lstlisting}
+
+\textbf{Causa.} El puente del acelerador se había conectado al \texttt{membus},
+cuyo rango en dicha zona ya se encuentra cubierto por el \texttt{iobridge} de la
+plataforma VExpress.
+
+\textbf{Solución.} Conectar el puente al \texttt{iobus}, que es el bus destinado
+a periféricos \emph{memory-mapped} en las plataformas ARM de gem5:
+
+\begin{lstlisting}[style=pystyle]
+system.tlm_bridge = Gem5ToTlmBridge32(gem5=system.iobus.mem_side_ports)
+\end{lstlisting}
+
+\newpage
+%==============================================================================
+\part{Correspondencia entre ambas implementaciones}
+\label{part:correspondencia}
+%==============================================================================
+
+Ambas implementaciones derivan del mismo modelo de referencia, por lo que deben
+resultar funcionalmente equivalentes. Esta parte documenta las correspondencias
+y el procedimiento de verificación cruzada.
+
+%------------------------------------------------------------------------------
+\section{Equivalencia funcional}
+\label{sec:bitexact}
+%------------------------------------------------------------------------------
+
+Las tres implementaciones deben producir la misma imagen de salida a partir de
+la misma entrada:
+
+\begin{lstlisting}[style=shstyle,caption={Verificacion cruzada de las tres salidas.}]
+./scripts/cross_check.sh <salida_del_testbench_HLS.raw>
+\end{lstlisting}
+
+\begin{table}[H]
+\centering
+\caption{Verificación cruzada de equivalencia funcional}
+\label{tab:bitexact}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Implementación} & \textbf{Suma MD5} & \textbf{Estado} \\
+\midrule
+Modelo de referencia (Ev. 1) & \texttt{45041cfcf4f0f1f0d8cdc2230acee01b} &
+  \textcolor{verdeok}{Verificado} \\
+Prototipo virtual            & \texttt{45041cfcf4f0f1f0d8cdc2230acee01b} &
+  \textcolor{verdeok}{Verificado} \\
+Implementación HLS           & \rule{5cm}{0.4pt} & \emph{pendiente} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\pendiente{Ejecutar \texttt{cross\_check.sh} con la salida del testbench de HLS
+y completar la Tabla~\ref{tab:bitexact}.}
+
+\subsection{Requisito de aritmética entera}
+
+La equivalencia bit a bit únicamente se cumple si la implementación en HLS
+emplea la misma aritmética entera de la Ecuación~\ref{eq:bt601}. El empleo de
+tipos de punto flotante (\texttt{float}, \texttt{double}) o de coma fija
+(\texttt{ap\_fixed}) introduce diferencias de redondeo.
+
+\begin{table}[H]
+\centering
+\caption{Interpretación del diagnóstico de la verificación cruzada}
+\begin{tabular}{@{}p{2.8cm}p{6.2cm}p{5cm}@{}}
+\toprule
+\textbf{Error abs. máx.} & \textbf{Diagnóstico} & \textbf{Acción} \\
+\midrule
+0     & Equivalencia bit a bit. & Ninguna. \\
+1     & Diferencia de redondeo: se emplea punto flotante o coma fija. La lógica
+        es correcta. & Migrar a aritmética entera. \\
+2 -- 5& Coeficientes o política de redondeo distintos. & Revisar coeficientes y
+        desplazamiento. \\
+$>$ 10& Error lógico: canales intercambiados, fórmula distinta o
+        desbordamiento. & Depurar el núcleo. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Como referencia, una implementación en punto flotante con los coeficientes
+decimales difiere del modelo entero en aproximadamente el 47\,\% de los píxeles,
+pero siempre en $\pm 1$. Una proporción elevada de píxeles discrepantes no
+implica necesariamente un error lógico.
+
+%------------------------------------------------------------------------------
+\section{Correspondencia de los mapas de registros}
+%------------------------------------------------------------------------------
+
+Ambas implementaciones exponen el mismo dispositivo desde la perspectiva del
+software; únicamente difiere el mecanismo de transporte.
+
+\begin{table}[H]
+\centering
+\caption{Correspondencia entre el prototipo virtual y la implementación en HLS}
+\label{tab:correspondencia-registros}
+\begin{tabular}{@{}p{4.2cm}p{4.6cm}p{5.2cm}@{}}
+\toprule
+\textbf{Función} & \textbf{Prototipo Virtual (TLM-2.0)} &
+\textbf{HLS (AXI4-Lite)} \\
+\midrule
+Iniciar la operación      & \texttt{CTRL} (\texttt{0x0C}), bit 0 &
+  \texttt{ap\_start} \\
+Consultar terminación     & \texttt{STATUS} (\texttt{0x10}), bit 1 &
+  \texttt{ap\_done} / \texttt{ap\_idle} \\
+Indicar ocupado           & \texttt{STATUS} (\texttt{0x10}), bit 0 &
+  \texttt{ap\_ready} / \texttt{ap\_idle} \\
+Dirección base de entrada & \texttt{DIR\_IN} (\texttt{0x00}) &
+  Puerto AXI4 Master \\
+Dirección base de salida  & \texttt{DIR\_OUT} (\texttt{0x04}) &
+  Puerto AXI4 Master \\
+Cantidad de píxeles       & \texttt{NUM\_PIXELS} (\texttt{0x08}) &
+  Argumento escalar AXI4-Lite \\
+Identificación            & \texttt{ID} (\texttt{0x14}) & No aplica \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+El protocolo de control es equivalente en ambos casos: escribir un bit de
+arranque y sondear un bit de terminación. En consecuencia, el programa en C
+desarrollado para el prototipo virtual constituye, conceptualmente, el mismo
+controlador que se requeriría para operar el IP sobre la tarjeta KV260.
+
+%------------------------------------------------------------------------------
+\section{Calibración del modelo de latencia}
+\label{sec:latencia-cruzada}
+%------------------------------------------------------------------------------
+
+El prototipo virtual modela la latencia del acelerador como:
+
+\begin{lstlisting}[style=cppstyle]
+wait(npix * 4.0, sc_core::SC_NS);   // 1 pixel/ciclo a 250 MHz
+\end{lstlisting}
+
+Dicho valor asume un \emph{Initiation Interval} unitario. Los resultados de
+síntesis (Tabla~\ref{tab:sintesis}) permiten validar o corregir esta suposición:
+
+\begin{table}[H]
+\centering
+\caption{Contraste entre el modelo temporal y la síntesis}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Modelo del VP} & \textbf{Síntesis HLS} \\
+\midrule
+Frecuencia            & 250 MHz  & \rule{3.5cm}{0.4pt} \\
+\emph{Init. Interval} & 1        & \rule{3.5cm}{0.4pt} \\
+Latencia estimada     & 8,29 ms  & \rule{3.5cm}{0.4pt} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\pendiente{Completar con los datos del reporte de síntesis. En caso de que el
+\emph{Initiation Interval} difiera de la unidad, el modelo del prototipo virtual
+debe ajustarse según $t = N_{\text{px}} \cdot II \cdot T_{\text{clk}}$.}
+
+%------------------------------------------------------------------------------
+\section{Diferencia arquitectónica en el camino de datos}
+%------------------------------------------------------------------------------
+
+Ambas implementaciones difieren en el tratamiento del movimiento de los píxeles,
+diferencia que se documenta explícitamente:
+
+\begin{table}[H]
+\centering
+\caption{Comparación del camino de datos}
+\begin{tabular}{@{}p{2.6cm}p{5.6cm}p{5.8cm}@{}}
+\toprule
+ & \textbf{Implementación HLS} & \textbf{Prototipo Virtual} \\
+\midrule
+Control & AXI4-Lite
+        & MMIO $\rightarrow$ TLM-2.0 \\
+Datos   & AXI4 Master: el IP accede a la memoria del sistema
+        & E/S directa del acelerador contra archivos del anfitrión \\
+Sockets & Dos: control (esclavo) y datos (maestro)
+        & Uno: el acelerador es \emph{target} puro \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Justificación.} En el prototipo virtual el sistema ARM64 se ejecuta en
+modo \emph{bare-metal}, sin sistema de archivos, por lo que la CPU no puede
+cargar la imagen desde disco hacia la memoria sin habilitar \emph{semihosting}.
+Se optó por modelar el almacenamiento persistente como entrada/salida del propio
+acelerador --- de forma coherente con el rol que ya desempeñaba el módulo de
+almacenamiento en la evaluación anterior --- lo que concentra el tráfico TLM en
+el control del dispositivo. El enunciado autoriza expresamente adaptaciones del
+modelo, y el resultado es funcionalmente idéntico según demuestra la
+verificación de la Sección~\ref{sec:comprobacion}.
+
+\newpage
+%==============================================================================
+\part*{Conclusiones}
+\addcontentsline{toc}{part}{Conclusiones}
+%==============================================================================
+\section*{Conclusiones}
+\addcontentsline{toc}{section}{Conclusiones}
+
+\begin{enumerate}[leftmargin=*,itemsep=4pt]
+  \item Se construyó un prototipo virtual funcional basado en ARM64 sobre gem5,
+        en el cual un programa escrito en C, ejecutado en modo \emph{bare-metal}
+        sobre una CPU ARMv8-A simulada, controla un acelerador modelado en
+        SystemC mediante transacciones TLM-2.0.
+
+  \item La verificación mediante sumas de comprobación demostró que la imagen
+        producida por el prototipo virtual es idéntica, byte a byte, a la del
+        modelo de referencia de la evaluación anterior, lo que confirma que la
+        migración preservó la funcionalidad del acelerador.
+
+  \item La integración del modelo SystemC dentro de gem5 mediante el mecanismo
+        \texttt{EXTRAS} y el puente \texttt{Gem5ToTlmBridge32} permitió mantener
+        el código del acelerador en el repositorio del proyecto, sin necesidad
+        de modificar el árbol de fuentes del simulador.
+
+  \item El software desarrollado no contiene construcciones dependientes de la
+        simulación, por lo que resultaría válido para controlar el IP
+        sintetizado sobre hardware real, modificando únicamente la dirección
+        base del periférico. Esta propiedad constituye el criterio que valida el
+        prototipo como tal.
+
+  \pendiente{Añadir las conclusiones correspondientes a la implementación en HLS
+  y a la comparación entre ambas.}
+\end{enumerate}
+
+\newpage
+%==============================================================================
+\section*{Declaración sobre el uso de Inteligencia Artificial}
+\addcontentsline{toc}{section}{Declaración sobre el uso de IA}
+%==============================================================================
+
+De acuerdo con lo establecido en el enunciado, se declara el uso de herramientas
+de Inteligencia Artificial durante el desarrollo de esta evaluación.
+
+\subsection*{Parte de prototipo virtual}
+
+Se utilizó \textbf{Claude (Anthropic)} a través de su interfaz de conversación,
+con los siguientes propósitos:
+
+\begin{itemize}[leftmargin=*,itemsep=3pt]
+  \item \textbf{Consulta de conceptos y de API de integración.} Se consultó el
+        procedimiento para integrar un módulo SystemC como periférico TLM-2.0
+        dentro de un SoC ARM64 en gem5.
+        \emph{Prompt representativo:} «cómo conectar un \emph{target} SystemC
+        TLM-2.0 al bus de un sistema ARM64 en gem5 mediante
+        \texttt{Gem5ToTlmBridge} y \texttt{SystemC\_Kernel}».
+
+  \item \textbf{Generación de código base.} A partir del acelerador de la
+        evaluación anterior, se generó con asistencia el andamiaje del módulo
+        integrado a gem5 (\texttt{sc\_img\_accel.hh/.cc}, \texttt{ImgAccel.py},
+        \texttt{SConscript}), el programa en C \emph{bare-metal}
+        (\texttt{main.c}, \texttt{startup.S}, \texttt{link.ld}), la
+        configuración de gem5 y los scripts de automatización.
+        \emph{Prompt representativo:} «adaptar el acelerador RGB a grises de
+        SystemC para que una CPU ARM64 lo controle por MMIO, y escribir el
+        programa en C que lo maneja».
+
+  \item \textbf{Depuración.} Se utilizó asistencia para diagnosticar los dos
+        problemas de integración documentados: la generación de un ejecutable
+        con enlace dinámico y el conflicto de rangos de direcciones entre el
+        \texttt{membus} y el \texttt{iobridge}.
+
+  \item \textbf{Generación de diagramas y mejora de la redacción.} Los diagramas
+        de bloques y de secuencias en formato de texto, así como la redacción de
+        la documentación técnica, se elaboraron con asistencia a partir del
+        código del proyecto.
+\end{itemize}
+
+La totalidad del código fue revisada, integrada y verificada por el equipo. La
+fórmula de conversión y el mapa de registros provienen del trabajo propio
+desarrollado en la evaluación anterior.
+
+\subsection*{Parte de implementación en HLS}
+
+\pendiente{El equipo encargado de la implementación en HLS debe completar esta
+subsección indicando si empleó herramientas de Inteligencia Artificial, con qué
+propósito y los \emph{prompts} representativos. El enunciado establece que la
+omisión de esta declaración implica la aplicación de la normativa de plagio; si
+no se utilizaron dichas herramientas, debe indicarse explícitamente.}
+
+\end{document}

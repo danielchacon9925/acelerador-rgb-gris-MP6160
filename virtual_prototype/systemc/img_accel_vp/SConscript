@@ -1,0 +1,14 @@
+# SConscript -- se compila dentro de gem5 mediante el mecanismo EXTRAS:
+#
+#   scons build/ARM/gem5.opt EXTRAS=/ruta/al/repo/systemc/img_accel_vp
+#
+# EXTRAS apunta a ESTE directorio (systemc/). gem5 procesa ImgAccel.py como
+# SimObject y compila sc_img_accel.cc como parte del binario. Los headers
+# accel_core.h / accel_io.h se resuelven porque este directorio queda en el
+# include path de EXTRAS.
+
+Import('*')
+
+SimObject('ImgAccel.py', sim_objects=['ImgAccel'])
+
+Source('sc_img_accel.cc')
