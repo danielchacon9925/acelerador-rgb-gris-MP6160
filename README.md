@@ -129,13 +129,37 @@ Ambas sumas deben coincidir en `45041cfcf4f0f1f0d8cdc2230acee01b`.
 
 ### 2.2 Implementación en HLS
 
-> ⬜ **Pendiente.** Ver [`hls/README.md`](hls/README.md) para el detalle de lo que debe
-> entregarse. Las instrucciones de compilación tendrán la forma:
->
-> ```bash
-> cd hls
-> vitis_hls -f scripts/run_hls.tcl
-> ```
+La implementación HLS ya tiene un flujo base operativo.
+
+#### Ejecución local del testbench
+
+```bash
+cd hls
+./scripts/run_tb.sh
+```
+
+Este comando compila el testbench, ejecuta el kernel y genera la salida RAW en:
+
+```text
+hls/reports/output_hls.raw
+```
+
+#### Ejecución del flujo de Vitis HLS
+
+Si Vitis HLS está instalado en el sistema:
+
+```bash
+cd hls
+./scripts/run_cosim.sh
+```
+
+El script invoca:
+
+```bash
+vitis_hls -f scripts/run_hls.tcl
+```
+
+Para una referencia detallada, ver [hls/README.md](hls/README.md).
 
 ### 2.3 Verificación cruzada
 
