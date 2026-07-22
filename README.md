@@ -75,12 +75,12 @@ implementaciones sean equivalentes bit a bit (ver [sección 10](#10-corresponden
 | Requisito | Estado | Dónde se verifica |
 |---|---|---|
 | Descrito en HLS con Vitis (2024.1 / 2024.2) | ✅ | [`hls/src/`](hls/src/), [`hls/scripts/run_hls.tcl`](hls/scripts/run_hls.tcl) |
-| Frecuencia de 250 MHz | ✅ | §9.8 — reloj estimado 2,920 ns |
+| Frecuencia de 250 MHz | ✅ | Sec. 9.8 — reloj estimado 2,920 ns |
 | AMD Kria KV260 como *target* | ✅ | `xck26-sfvc784-2LV-c` en el script TCL |
-| AXI4 para datos, AXI4-Lite para control | ✅ | §8 y §5.2 — `m_axi` + `s_axilite` |
-| Testbench en C para co-simulación | ✅ | [`hls/tb/tb_rgb2gray.cpp`](hls/tb/tb_rgb2gray.cpp), §9.8 |
-| Conversión RGB a escala de grises | ✅ | §1, §10.1 |
-| *Pipeline* con separación E/S ↔ procesamiento | ✅ | §5.2 — `DATAFLOW` con `load_rgb` / `compute_gray` / `store_gray` |
+| AXI4 para datos, AXI4-Lite para control | ✅ | Sec. 8 y Sec. 5.2 — `m_axi` + `s_axilite` |
+| Testbench en C para co-simulación | ✅ | [`hls/tb/tb_rgb2gray.cpp`](hls/tb/tb_rgb2gray.cpp), Sec. 9.8 |
+| Conversión RGB a escala de grises | ✅ | Sec. 1, Sec. 10.1 |
+| *Pipeline* con separación E/S ↔ procesamiento | ✅ | Sec. 5.2 — `DATAFLOW` con `load_rgb` / `compute_gray` / `store_gray` |
 
 > **Nota sobre la versión de la herramienta.** El desarrollo inicial se realizó con Vitis HLS
 > 2024.2 y el flujo completo se **reprodujo y verificó con Vitis HLS 2024.1** (la versión que
@@ -92,10 +92,10 @@ implementaciones sean equivalentes bit a bit (ver [sección 10](#10-corresponden
 
 | Requisito | Estado | Dónde se verifica |
 |---|---|---|
-| Mismo modelo del acelerador de la evaluación anterior, con adaptaciones | ✅ | §4.1, §10.4 |
-| Comunicación mediante TLM-2.0 | ✅ | §7 — `tlm_generic_payload` vía `Gem5ToTlmBridge32` |
-| Sistema basado en ARM64 | ✅ | §9.1 — ARMv8-A sobre `VExpress_GEM5_V2` |
-| Programa en C que interactúa con el periférico | ✅ | [`virtual_prototype/sw/main.c`](virtual_prototype/sw/main.c), §6 |
+| Mismo modelo del acelerador de la evaluación anterior, con adaptaciones | ✅ | Sec. 4.1, Sec. 10.4 |
+| Comunicación mediante TLM-2.0 | ✅ | Sec. 7 — `tlm_generic_payload` vía `Gem5ToTlmBridge32` |
+| Sistema basado en ARM64 | ✅ | Sec. 9.1 — ARMv8-A sobre `VExpress_GEM5_V2` |
+| Programa en C que interactúa con el periférico | ✅ | [`virtual_prototype/sw/main.c`](virtual_prototype/sw/main.c), Sec. 6 |
 
 **Entregables**
 
@@ -107,9 +107,9 @@ implementaciones sean equivalentes bit a bit (ver [sección 10](#10-corresponden
 | Scripts de construcción y ejecución del prototipo virtual | [`virtual_prototype/scripts/`](virtual_prototype/scripts/) |
 | Imagen de entrada RAW RGB | [`images/input/input_1080p.rgb`](images/input/input_1080p.rgb) |
 | Imagen de salida generada | [`images/output/`](images/output/) — una por implementación |
-| Diagrama de bloques de la arquitectura | §5.1 y §5.2; versión ampliada en [`docs/diagrama_bloques.txt`](docs/diagrama_bloques.txt) |
-| README con contenido técnico | Este documento, §2 a §10 |
-| Declaración sobre el uso de IA | §11 |
+| Diagrama de bloques de la arquitectura | Sec. 5.1 y Sec. 5.2; versión ampliada en [`docs/diagrama_bloques.txt`](docs/diagrama_bloques.txt) |
+| README con contenido técnico | Este documento, Sec. 2 a Sec. 10 |
+| Declaración sobre el uso de IA | Sec. 11 |
 
 ---
 
@@ -151,7 +151,7 @@ yes | ./virtual_prototype/scripts/build_gem5.sh
 
 # 4) Ejecutar el prototipo virtual completo
 #    Se elimina la salida previa para garantizar que la imagen resultante
-#    proviene efectivamente de esta corrida (véase §9.7).
+#    proviene efectivamente de esta corrida (véase Sec. 9.7).
 rm -f images/output/output_1080p_gray.raw
 ./virtual_prototype/scripts/run_vp.sh
 ```
@@ -176,7 +176,7 @@ grep simSeconds m5out/stats.txt
 
 Ambas sumas deben coincidir en `45041cfcf4f0f1f0d8cdc2230acee01b`, y el tiempo simulado debe
 situarse en torno a `0.008296` s. Comprobar **ambas** cosas es importante: la coincidencia de
-sumas por sí sola no garantiza que la imagen provenga de la corrida en curso (véase §9.7).
+sumas por sí sola no garantiza que la imagen provenga de la corrida en curso (véase Sec. 9.7).
 
 ### 2.2 Implementación en HLS
 
@@ -399,7 +399,7 @@ concurrentes, encadenadas por streams FIFO:
 ```
 
 El movimiento de píxeles se realiza por AXI4 Master contra la RAM del sistema (a
-diferencia del prototipo virtual, donde el acelerador es *target* puro; ver §10.4).
+diferencia del prototipo virtual, donde el acelerador es *target* puro; ver Sec. 10.4).
 
 ---
 
@@ -505,7 +505,7 @@ los registros del prototipo virtual es directa:
 Los offsets exactos del bloque `control` los fija Vitis y se listan en el reporte de
 exportación del IP (`export_design`); el programa en C que controla el IP sobre la
 KV260 es conceptualmente el mismo de [`virtual_prototype/sw/main.c`](virtual_prototype/sw/main.c)
-(ver §10.2).
+(ver Sec. 10.2).
 
 ---
 
@@ -576,7 +576,7 @@ al retornar de `main()`.
 coincide con el valor que predice el modelo de latencia del acelerador
 (`N_px × 4 ns = 2 073 600 × 4 ns = 8,2944 ms`). Esta correspondencia confirma que el
 `SC_THREAD` de procesamiento se ejecutó íntegramente, y no solo que el programa terminó: una
-terminación prematura produciría un tiempo simulado de microsegundos (véase §9.7).
+terminación prematura produciría un tiempo simulado de microsegundos (véase Sec. 9.7).
 
 ### 9.5 Comprobación de resultados
 
@@ -634,7 +634,7 @@ sobrescribirlo. La discrepancia se detectó al contrastar el **tiempo simulado**
 más de tres órdenes de magnitud incompatible con una ejecución completa. El episodio ilustra que
 la verificación funcional por sí sola puede ser insuficiente, y que conviene comprobar además
 que las **magnitudes temporales** de la simulación sean consistentes con el modelo. Como medida
-preventiva, el flujo documentado en §2.1 elimina la imagen de salida antes de cada corrida.
+preventiva, el flujo documentado en Sec. 2.1 elimina la imagen de salida antes de cada corrida.
 
 ### 9.8 Resultados de síntesis (HLS)
 
@@ -659,7 +659,7 @@ del camino crítico estimado, sin descontar la incertidumbre.
 **Simulación C:** salida idéntica bit a bit a la referencia sobre los 1080p completos
 (0 errores). **Co-simulación C/RTL:** PASS — el RTL generado reproduce el mismo
 resultado; se co-simula un recorte de 8192 píxeles porque simular la imagen completa
-en `xsim` (millones de ciclos) es impracticable (ver §10.3).
+en `xsim` (millones de ciclos) es impracticable (ver Sec. 10.3).
 
 **Extracción del *pipeline*.** La síntesis confirma la separación de etapas exigida por el
 enunciado: `[XFORM 203-712] Applying dataflow to function 'rgb2gray', detected/extracted 4
@@ -679,7 +679,7 @@ explícitamente: `[HLS 200-880] Unable to enforce a carried dependence constrain
 distance = 1, offset = 1) between bus read operations on port 'gmem_in'`. La causa es que cada
 píxel requiere tres lecturas de 8 bits sobre el mismo puerto, que no pueden emitirse en un solo
 ciclo. Como en `DATAFLOW` el *throughput* global lo fija la etapa más lenta, el diseño procesa
-un píxel cada ~3 ciclos (ver §10.3).
+un píxel cada ~3 ciclos (ver Sec. 10.3).
 
 La ocupación mínima (≤2 % en todos los recursos) deja amplio margen para ensanchar el puerto
 `m_axi` de entrada —leer 64 bits por transacción y desempaquetar— lo que llevaría `load_rgb` a
@@ -866,7 +866,7 @@ implementación en HLS, con los siguientes propósitos:
 
 Todo el código fue revisado por el equipo y **verificado ejecutando el flujo real de
 Vitis HLS** (simulación C, síntesis y co-simulación C/RTL): los resultados de síntesis
-(§9.8) y la equivalencia bit a bit (§10.1) provienen de corridas reales de la
+(Sec. 9.8) y la equivalencia bit a bit (Sec. 10.1) provienen de corridas reales de la
 herramienta, no de estimaciones. La fórmula de conversión proviene del trabajo propio
 de la evaluación anterior.
 
