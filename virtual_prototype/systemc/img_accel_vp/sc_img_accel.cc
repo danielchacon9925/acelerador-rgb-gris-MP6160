@@ -36,7 +36,11 @@ void
 ImgAccel::b_transport(tlm::tlm_generic_payload& trans, sc_core::sc_time& delay)
 {
     const tlm::tlm_command cmd = trans.get_command();
-    const sc_dt::uint64    adr = trans.get_address();
+    const sc_dt::uint64    adr_raw = trans.get_address();
+    // El puente puede entregar la direccion completa o el offset local segun
+    // la version de gem5. La ventana es de 4 KiB, asi que enmascarar a 12 bits
+    // hace que el decodificado funcione en ambos casos.
+    const sc_dt::uint64    adr = adr_raw & 0xFFF;
     unsigned char*         ptr = trans.get_data_ptr();
     const unsigned int     len = trans.get_data_length();
 
