@@ -13,6 +13,7 @@ virtual_prototype/verify/tb_standalone
 hls/rgb2gray_hls/
 hls/*.log
 hls/*.jou
+hls/tb/vectors/out_crop_hls.raw
 vitis_hls.log
 *.tcl.log
 
@@ -26,6 +27,9 @@ docs/reporte/*.lot
 docs/reporte/*.fls
 docs/reporte/*.fdb_latexmk
 docs/reporte/*.synctex.gz
+
+# ---- guias explicativas (no se versionan) ----
+docs/GUIA_*.md
 
 # ---- sistema ----
 .DS_Store

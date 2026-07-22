@@ -1,0 +1,263 @@
+
+
+================================================================
+== Vitis HLS Report for 'rgb2gray'
+================================================================
+* Date:           Tue Jul 21 23:38:43 2026
+
+* Version:        2024.2 (Build 5238294 on Nov  8 2024)
+* Project:        rgb2gray_hls
+* Solution:       solution1 (Vivado IP Flow Target)
+* Product family: zynquplus
+* Target device:  xck26-sfvc784-2LV-c
+
+
+================================================================
+== Performance Estimates
+================================================================
++ Timing: 
+    * Summary: 
+    +--------+---------+----------+------------+
+    |  Clock |  Target | Estimated| Uncertainty|
+    +--------+---------+----------+------------+
+    |ap_clk  |  4.00 ns|  2.920 ns|     1.08 ns|
+    +--------+---------+----------+------------+
+
++ Latency: 
+    * Summary: 
+    +---------+---------+----------+----------+-----+-----+----------+
+    |  Latency (cycles) |  Latency (absolute) |  Interval | Pipeline |
+    |   min   |   max   |    min   |    max   | min | max |   Type   |
+    +---------+---------+----------+----------+-----+-----+----------+
+    |        ?|        ?|         ?|         ?|    ?|    ?|  dataflow|
+    +---------+---------+----------+----------+-----+-----+----------+
+
+    + Detail: 
+        * Instance: 
+        +-----------------+--------------+---------+---------+----------+----------+-----+-----+---------+
+        |                 |              |  Latency (cycles) |  Latency (absolute) |  Interval | Pipeline|
+        |     Instance    |    Module    |   min   |   max   |    min   |    max   | min | max |   Type  |
+        +-----------------+--------------+---------+---------+----------+----------+-----+-----+---------+
+        |entry_proc_U0    |entry_proc    |        0|        0|      0 ns|      0 ns|    0|    0|       no|
+        |load_rgb_U0      |load_rgb      |        ?|        ?|         ?|         ?|    ?|    ?|       no|
+        |compute_gray_U0  |compute_gray  |        ?|        ?|         ?|         ?|    ?|    ?|       no|
+        |store_gray_U0    |store_gray    |        ?|        ?|         ?|         ?|    ?|    ?|       no|
+        +-----------------+--------------+---------+---------+----------+----------+-----+-----+---------+
+
+        * Loop: 
+        N/A
+
+
+
+================================================================
+== Utilization Estimates
+================================================================
+* Summary: 
++-----------------+---------+------+--------+--------+-----+
+|       Name      | BRAM_18K|  DSP |   FF   |   LUT  | URAM|
++-----------------+---------+------+--------+--------+-----+
+|DSP              |        -|     -|       -|       -|    -|
+|Expression       |        -|     -|       0|      12|    -|
+|FIFO             |        2|     -|     551|     368|    -|
+|Instance         |        3|     2|    2092|    3036|    0|
+|Memory           |        -|     -|       -|       -|    -|
+|Multiplexer      |        -|     -|       0|      18|    -|
+|Register         |        -|     -|       2|       -|    -|
++-----------------+---------+------+--------+--------+-----+
+|Total            |        5|     2|    2645|    3434|    0|
++-----------------+---------+------+--------+--------+-----+
+|Available        |      288|  1248|  234240|  117120|   64|
++-----------------+---------+------+--------+--------+-----+
+|Utilization (%)  |        1|    ~0|       1|       2|    0|
++-----------------+---------+------+--------+--------+-----+
+
++ Detail: 
+    * Instance: 
+    +------------------+----------------+---------+----+-----+-----+-----+
+    |     Instance     |     Module     | BRAM_18K| DSP|  FF | LUT | URAM|
+    +------------------+----------------+---------+----+-----+-----+-----+
+    |compute_gray_U0   |compute_gray    |        0|   2|  104|  225|    0|
+    |control_s_axi_U   |control_s_axi   |        0|   0|  214|  360|    0|
+    |entry_proc_U0     |entry_proc      |        0|   0|    3|   29|    0|
+    |gmem_in_m_axi_U   |gmem_in_m_axi   |        2|   0|  707|  757|    0|
+    |gmem_out_m_axi_U  |gmem_out_m_axi  |        1|   0|  705|  752|    0|
+    |load_rgb_U0       |load_rgb        |        0|   0|  207|  528|    0|
+    |store_gray_U0     |store_gray      |        0|   0|  152|  385|    0|
+    +------------------+----------------+---------+----+-----+-----+-----+
+    |Total             |                |        3|   2| 2092| 3036|    0|
+    +------------------+----------------+---------+----+-----+-----+-----+
+
+    * DSP: 
+    N/A
+
+    * Memory: 
+    N/A
+
+    * FIFO: 
+    +-----------------+---------+-----+----+-----+------+-----+---------+
+    |       Name      | BRAM_18K|  FF | LUT| URAM| Depth| Bits| Size:D*B|
+    +-----------------+---------+-----+----+-----+------+-----+---------+
+    |num_pixels_c1_U  |        0|   99|   0|    -|     2|   32|       64|
+    |num_pixels_c_U   |        0|   99|   0|    -|     2|   32|       64|
+    |out_r_c_U        |        0|   99|   0|    -|     4|   64|      256|
+    |s_gray_U         |        0|   99|   0|    -|    64|    8|      512|
+    |s_rgb_U          |        2|  155|   0|    -|    64|   24|     1536|
+    +-----------------+---------+-----+----+-----+------+-----+---------+
+    |Total            |        2|  551|   0|    0|   136|  160|     2432|
+    +-----------------+---------+-----+----+-----+------+-----+---------+
+
+    * Expression: 
+    +--------------------------------+----------+----+---+----+------------+------------+
+    |          Variable Name         | Operation| DSP| FF| LUT| Bitwidth P0| Bitwidth P1|
+    +--------------------------------+----------+----+---+----+------------+------------+
+    |ap_idle                         |       and|   0|  0|   2|           1|           1|
+    |ap_sync_ready                   |       and|   0|  0|   2|           1|           1|
+    |entry_proc_U0_ap_start          |       and|   0|  0|   2|           1|           1|
+    |load_rgb_U0_ap_start            |       and|   0|  0|   2|           1|           1|
+    |ap_sync_entry_proc_U0_ap_ready  |        or|   0|  0|   2|           1|           1|
+    |ap_sync_load_rgb_U0_ap_ready    |        or|   0|  0|   2|           1|           1|
+    +--------------------------------+----------+----+---+----+------------+------------+
+    |Total                           |          |   0|  0|  12|           6|           6|
+    +--------------------------------+----------+----+---+----+------------+------------+
+
+    * Multiplexer: 
+    +------------------------------------+----+-----------+-----+-----------+
+    |                Name                | LUT| Input Size| Bits| Total Bits|
+    +------------------------------------+----+-----------+-----+-----------+
+    |ap_sync_reg_entry_proc_U0_ap_ready  |   9|          2|    1|          2|
+    |ap_sync_reg_load_rgb_U0_ap_ready    |   9|          2|    1|          2|
+    +------------------------------------+----+-----------+-----+-----------+
+    |Total                               |  18|          4|    2|          4|
+    +------------------------------------+----+-----------+-----+-----------+
+
+    * Register: 
+    +------------------------------------+---+----+-----+-----------+
+    |                Name                | FF| LUT| Bits| Const Bits|
+    +------------------------------------+---+----+-----+-----------+
+    |ap_sync_reg_entry_proc_U0_ap_ready  |  1|   0|    1|          0|
+    |ap_sync_reg_load_rgb_U0_ap_ready    |  1|   0|    1|          0|
+    +------------------------------------+---+----+-----+-----------+
+    |Total                               |  2|   0|    2|          0|
+    +------------------------------------+---+----+-----+-----------+
+
+
+
+================================================================
+== Interface
+================================================================
+* Summary: 
++-------------------------+-----+-----+------------+--------------+--------------+
+|        RTL Ports        | Dir | Bits|  Protocol  | Source Object|    C Type    |
++-------------------------+-----+-----+------------+--------------+--------------+
+|s_axi_control_AWVALID    |   in|    1|       s_axi|       control|        scalar|
+|s_axi_control_AWREADY    |  out|    1|       s_axi|       control|        scalar|
+|s_axi_control_AWADDR     |   in|    6|       s_axi|       control|        scalar|
+|s_axi_control_WVALID     |   in|    1|       s_axi|       control|        scalar|
+|s_axi_control_WREADY     |  out|    1|       s_axi|       control|        scalar|
+|s_axi_control_WDATA      |   in|   32|       s_axi|       control|        scalar|
+|s_axi_control_WSTRB      |   in|    4|       s_axi|       control|        scalar|
+|s_axi_control_ARVALID    |   in|    1|       s_axi|       control|        scalar|
+|s_axi_control_ARREADY    |  out|    1|       s_axi|       control|        scalar|
+|s_axi_control_ARADDR     |   in|    6|       s_axi|       control|        scalar|
+|s_axi_control_RVALID     |  out|    1|       s_axi|       control|        scalar|
+|s_axi_control_RREADY     |   in|    1|       s_axi|       control|        scalar|
+|s_axi_control_RDATA      |  out|   32|       s_axi|       control|        scalar|
+|s_axi_control_RRESP      |  out|    2|       s_axi|       control|        scalar|
+|s_axi_control_BVALID     |  out|    1|       s_axi|       control|        scalar|
+|s_axi_control_BREADY     |   in|    1|       s_axi|       control|        scalar|
+|s_axi_control_BRESP      |  out|    2|       s_axi|       control|        scalar|
+|ap_clk                   |   in|    1|  ap_ctrl_hs|      rgb2gray|  return value|
+|ap_rst_n                 |   in|    1|  ap_ctrl_hs|      rgb2gray|  return value|
+|interrupt                |  out|    1|  ap_ctrl_hs|      rgb2gray|  return value|
+|m_axi_gmem_in_AWVALID    |  out|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_AWREADY    |   in|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_AWADDR     |  out|   64|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_AWID       |  out|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_AWLEN      |  out|    8|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_AWSIZE     |  out|    3|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_AWBURST    |  out|    2|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_AWLOCK     |  out|    2|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_AWCACHE    |  out|    4|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_AWPROT     |  out|    3|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_AWQOS      |  out|    4|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_AWREGION   |  out|    4|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_AWUSER     |  out|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_WVALID     |  out|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_WREADY     |   in|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_WDATA      |  out|   32|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_WSTRB      |  out|    4|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_WLAST      |  out|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_WID        |  out|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_WUSER      |  out|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_ARVALID    |  out|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_ARREADY    |   in|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_ARADDR     |  out|   64|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_ARID       |  out|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_ARLEN      |  out|    8|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_ARSIZE     |  out|    3|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_ARBURST    |  out|    2|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_ARLOCK     |  out|    2|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_ARCACHE    |  out|    4|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_ARPROT     |  out|    3|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_ARQOS      |  out|    4|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_ARREGION   |  out|    4|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_ARUSER     |  out|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_RVALID     |   in|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_RREADY     |  out|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_RDATA      |   in|   32|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_RLAST      |   in|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_RID        |   in|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_RUSER      |   in|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_RRESP      |   in|    2|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_BVALID     |   in|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_BREADY     |  out|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_BRESP      |   in|    2|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_BID        |   in|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_in_BUSER      |   in|    1|       m_axi|       gmem_in|       pointer|
+|m_axi_gmem_out_AWVALID   |  out|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_AWREADY   |   in|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_AWADDR    |  out|   64|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_AWID      |  out|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_AWLEN     |  out|    8|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_AWSIZE    |  out|    3|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_AWBURST   |  out|    2|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_AWLOCK    |  out|    2|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_AWCACHE   |  out|    4|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_AWPROT    |  out|    3|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_AWQOS     |  out|    4|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_AWREGION  |  out|    4|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_AWUSER    |  out|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_WVALID    |  out|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_WREADY    |   in|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_WDATA     |  out|   32|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_WSTRB     |  out|    4|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_WLAST     |  out|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_WID       |  out|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_WUSER     |  out|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_ARVALID   |  out|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_ARREADY   |   in|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_ARADDR    |  out|   64|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_ARID      |  out|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_ARLEN     |  out|    8|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_ARSIZE    |  out|    3|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_ARBURST   |  out|    2|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_ARLOCK    |  out|    2|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_ARCACHE   |  out|    4|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_ARPROT    |  out|    3|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_ARQOS     |  out|    4|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_ARREGION  |  out|    4|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_ARUSER    |  out|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_RVALID    |   in|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_RREADY    |  out|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_RDATA     |   in|   32|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_RLAST     |   in|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_RID       |   in|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_RUSER     |   in|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_RRESP     |   in|    2|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_BVALID    |   in|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_BREADY    |  out|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_BRESP     |   in|    2|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_BID       |   in|    1|       m_axi|      gmem_out|       pointer|
+|m_axi_gmem_out_BUSER     |   in|    1|       m_axi|      gmem_out|       pointer|
++-------------------------+-----+-----+------------+--------------+--------------+
+

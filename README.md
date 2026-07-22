@@ -15,8 +15,8 @@ nivel de transacciones de la evaluación anterior:
 | Parte | Estado |
 |---|---|
 | Prototipo virtual | ✅ Completo y verificado |
-| Implementación HLS | ⬜ En desarrollo — ver [`hls/README.md`](hls/README.md) |
-| Verificación cruzada | ◐ Parcial — pendiente la salida del testbench de HLS |
+| Implementación HLS | ✅ Completa y verificada (csim + csynth + cosim) — ver [`hls/README.md`](hls/README.md) |
+| Verificación cruzada | ✅ Bit-exacta entre Eval 1, prototipo virtual e HLS |
 
 ---
 
@@ -129,13 +129,19 @@ Ambas sumas deben coincidir en `45041cfcf4f0f1f0d8cdc2230acee01b`.
 
 ### 2.2 Implementación en HLS
 
-> ⬜ **Pendiente.** Ver [`hls/README.md`](hls/README.md) para el detalle de lo que debe
-> entregarse. Las instrucciones de compilación tendrán la forma:
->
-> ```bash
-> cd hls
-> vitis_hls -f scripts/run_hls.tcl
-> ```
+Requiere Vitis HLS (probado con 2024.2; el enunciado pide 2024.1, el flujo es idéntico).
+
+```bash
+# Cargar el entorno de Vitis HLS
+source /ruta/a/Vitis_HLS/2024.2/settings64.sh
+
+# Flujo completo: csim -> csynth -> cosim -> export IP
+cd hls
+vitis_hls -f scripts/run_hls.tcl
+```
+
+El testbench genera `images/output/output_1080p_gray_hls.raw`. Detalle completo de
+la arquitectura, interfaces y resultados en [`hls/README.md`](hls/README.md).
 
 ### 2.3 Verificación cruzada
 
@@ -153,13 +159,15 @@ Una vez disponible la salida del testbench de HLS:
 acelerador-rgb-gris-MP6160/
 ├── README.md                          Este documento
 │
-├── hls/                               IMPLEMENTACIÓN EN HLS  (pendiente)
-│   ├── README.md                      Guía de lo que debe entregarse
+├── hls/                               IMPLEMENTACIÓN EN HLS  (completa)
+│   ├── README.md                      Arquitectura, interfaces y resultados
 │   ├── src/                           Código fuente sintetizable
+│   │   ├── rgb2gray.hpp               Contrato: constantes y coeficientes BT.601
+│   │   └── rgb2gray.cpp               Kernel DATAFLOW (load → compute → store)
 │   ├── tb/                            Testbench en C para co-simulación
 │   ├── scripts/                       Scripts TCL del flujo de HLS
-│   │   └── run_hls.tcl                Plantilla del flujo completo
-│   └── reports/                       Reportes de síntesis y co-simulación
+│   │   └── run_hls.tcl                Flujo completo csim→csynth→cosim→export
+│   └── reports/                       Reportes reales de síntesis
 │
 ├── virtual_prototype/                 PROTOTIPO VIRTUAL  (completo)
 │   ├── systemc/img_accel_vp/          Modelo SystemC del acelerador
@@ -255,7 +263,18 @@ eventos.
 
 ### 4.4 Implementación en HLS — `hls/`
 
-> ⬜ Pendiente. Ver [`hls/README.md`](hls/README.md).
+Kernel sintetizable en Vitis HLS con separación en tres etapas concurrentes
+(`#pragma HLS DATAFLOW`), reflejando la misma capa de *contrato* que el prototipo
+virtual:
+
+| Archivo | Capa | Función |
+|---|---|---|
+| `src/rgb2gray.hpp` | Contrato | Constantes de imagen y coeficientes BT.601 enteros (espejo de `accel_core.h`). |
+| `src/rgb2gray.cpp` | Modelo | Kernel top-level y las tres etapas `load_rgb` / `compute_gray` / `store_gray`. |
+| `tb/tb_rgb2gray.cpp` | Verificación | Testbench en C: ejercita el kernel y compara contra la referencia bit a bit. |
+| `scripts/run_hls.tcl` | Flujo | csim → csynth → cosim → export IP para la KV260. |
+
+Detalle completo en [`hls/README.md`](hls/README.md).
 
 ---
 
@@ -305,7 +324,31 @@ del anfitrión, por lo que no se requiere un *transactor* maestro de retorno hac
 
 ### 5.2 Implementación en HLS
 
-> ⬜ Pendiente: insertar el diagrama de bloques de la arquitectura en hardware.
+Pipeline `DATAFLOW` con separación explícita entre las etapas de E/S de datos y la
+etapa de procesamiento (requisito del enunciado). Las tres etapas corren
+concurrentes, encadenadas por streams FIFO:
+
+```
+                 AXI4-Lite (control: ap_start/ap_done, dir_in, dir_out, num_pixels)
+                                          |
+   +======================================v===================================+
+   |                          IP rgb2gray (KV260, 250 MHz)                     |
+   |                                                                          |
+   |   in ==(AXI4 Master)==> +-----------+   s_rgb   +--------------+         |
+   |   (RGB en RAM)          | load_rgb  |==========>| compute_gray |         |
+   |                         | (E/S in)  |  stream   | (BT.601 int) |         |
+   |                         +-----------+           +------+-------+         |
+   |                                                        | s_gray (stream) |
+   |                                                 +------v-------+          |
+   |   out <=(AXI4 Master)== ========================| store_gray   |          |
+   |   (gris en RAM)                                 | (E/S out)    |          |
+   |                                                 +--------------+          |
+   +==========================================================================+
+        \___ E/S de datos ___/   \_ PROCESAMIENTO _/   \___ E/S de datos ___/
+```
+
+El movimiento de píxeles se realiza por AXI4 Master contra la RAM del sistema (a
+diferencia del prototipo virtual, donde el acelerador es *target* puro; ver §10.4).
 
 ---
 
@@ -397,7 +440,21 @@ Cada acceso MMIO de la CPU a la ventana del acelerador genera una transacción
 
 ### Mapa AXI4-Lite de la implementación en HLS
 
-> ⬜ Pendiente: completar con el mapa generado por Vitis.
+Vitis HLS genera un bloque de control AXI4-Lite (`s_axilite bundle=control`) con el
+protocolo `ap_ctrl_hs` y los argumentos escalares. La correspondencia funcional con
+los registros del prototipo virtual es directa:
+
+| Función | Registro HLS (AXI4-Lite) | Equivalente en el VP |
+|---|---|---|
+| Arranque / estado | `CTRL` / `STATUS` (`ap_start`, `ap_done`, `ap_idle`, `ap_ready`) | `CTRL` (0x0C) / `STATUS` (0x10) |
+| Dirección base de entrada | offset de `in` (puerto AXI4 Master) | `DIR_IN` (0x00) |
+| Dirección base de salida | offset de `out` (puerto AXI4 Master) | `DIR_OUT` (0x04) |
+| Cantidad de píxeles | `num_pixels` (escalar) | `NUM_PIXELS` (0x08) |
+
+Los offsets exactos del bloque `control` los fija Vitis y se listan en el reporte de
+exportación del IP (`export_design`); el programa en C que controla el IP sobre la
+KV260 es conceptualmente el mismo de [`virtual_prototype/sw/main.c`](virtual_prototype/sw/main.c)
+(ver §10.2).
 
 ---
 
@@ -508,7 +565,27 @@ sobre la KV260, modificando únicamente la dirección base del periférico.
 
 ### 9.8 Resultados de síntesis (HLS)
 
-> ⬜ Pendiente. Ver [`hls/README.md`](hls/README.md).
+Síntesis con Vitis HLS 2024.2, target `xck26-sfvc784-2LV-c` (KV260), reloj de 4 ns
+(250 MHz). Reporte completo en [`hls/reports/rgb2gray_csynth.rpt`](hls/reports/rgb2gray_csynth.rpt).
+
+| Métrica | Valor | Estado |
+|---|---|---|
+| Reloj objetivo | 4.00 ns (250 MHz) | — |
+| Reloj estimado | 2.920 ns → **Fmax ≈ 342 MHz** | ✅ cumple con holgura |
+| BRAM_18K | 5 / 288 (1 %) | ✅ |
+| DSP | 2 / 1248 (~0 %) | ✅ |
+| FF | 2 645 / 234 240 (1 %) | ✅ |
+| LUT | 3 434 / 117 120 (2 %) | ✅ |
+
+**Simulación C:** salida idéntica bit a bit a la referencia sobre los 1080p completos
+(0 errores). **Co-simulación C/RTL:** PASS — el RTL generado reproduce el mismo
+resultado; se co-simula un recorte de 8192 píxeles porque simular la imagen completa
+en `xsim` (millones de ciclos) es impracticable (ver §10.3).
+
+Las etapas `compute_gray` y `store_gray` alcanzan `II=1`; `load_rgb` queda en `II=3`
+por leer los 3 bytes RGB en accesos byte a byte (cuello de botella del pipeline; ver
+§10.3). La ocupación mínima (≤2 %) deja amplio margen para ensanchar el bus AXI de
+entrada y llevar la carga a `II≈1`.
 
 ---
 
@@ -541,7 +618,10 @@ funcionalmente equivalentes.
 |---|---|---|
 | Modelo de referencia (Eval. 1) | `45041cfcf4f0f1f0d8cdc2230acee01b` | ✅ |
 | Prototipo virtual | `45041cfcf4f0f1f0d8cdc2230acee01b` | ✅ |
-| Implementación HLS | — | ⬜ Pendiente |
+| Implementación HLS | `45041cfcf4f0f1f0d8cdc2230acee01b` | ✅ |
+
+Las tres sumas coinciden: **equivalencia bit a bit demostrada** entre el modelo de
+referencia, el prototipo virtual y el IP sintetizado en HLS.
 
 **Requisito de aritmética entera.** La equivalencia bit a bit sólo se cumple si el HLS emplea la
 misma aritmética entera. El uso de `float`, `double` o `ap_fixed` introduce diferencias de
@@ -581,12 +661,30 @@ controlador que se requeriría para operar el IP sobre la KV260.
 
 | Parámetro | Modelo del VP | Síntesis HLS |
 |---|---|---|
-| Frecuencia | 250 MHz | ⬜ Pendiente |
-| *Initiation Interval* | 1 | ⬜ Pendiente |
-| Latencia estimada | 8,29 ms | ⬜ Pendiente |
+| Frecuencia | 250 MHz | 250 MHz cumplida (Fmax ≈ 342 MHz) |
+| *II* `compute_gray` | 1 | **1** (logrado) |
+| *II* `store_gray` | 1 | **1** (logrado) |
+| *II* `load_rgb` | 1 | **3** (cuello de botella, ver abajo) |
+| Latencia (8192 px, medida en cosim) | — | **24 671 ciclos** (3,01 ciclos/px) |
+| Latencia 1080p (extrapolada) | 8,29 ms (`N_px · 4 ns`) | ≈ 24,98 ms (`3,01 · N_px · 4 ns`) |
 
-Si el *Initiation Interval* difiere de la unidad, el modelo del prototipo virtual debe ajustarse
-según `t = N_px · II · T_clk` en `sc_img_accel.cc`.
+**Discrepancia y su causa.** Las etapas de cómputo y de escritura alcanzan `II=1`,
+pero `load_rgb` logra `II=3`: lee los tres bytes RGB de cada píxel con accesos
+secuenciales sobre un puerto AXI4 Master de 8 bits, y esas tres lecturas no caben en
+un ciclo. Como en `DATAFLOW` el *throughput* lo fija la etapa más lenta, el pipeline
+procesa un píxel cada ~3 ciclos. La **co-simulación C/RTL lo confirma
+empíricamente**: 24 671 ciclos para 8192 píxeles = 3,01 ciclos/px (reporte en
+[`hls/reports/rgb2gray_cosim.rpt`](hls/reports/rgb2gray_cosim.rpt)). En consecuencia,
+el modelo del prototipo virtual (`t = N_px · 4 ns = 8,29 ms`, que asume `II=1`)
+**subestima** la latencia real del hardware, que extrapolada a 1080p es
+`3,01 · 2 073 600 · 4 ns ≈ 24,98 ms`.
+
+**Acciones.** (1) Para reconciliar el prototipo virtual con el hardware basta ajustar
+la constante de `wait()` en
+[`sc_img_accel.cc`](virtual_prototype/systemc/img_accel_vp/sc_img_accel.cc) a `N_px ·
+3 · 4 ns`. (2) Alternativamente, ensanchar el puerto `m_axi` de entrada (leer 64 bits
+por transacción y desempaquetar) llevaría `load_rgb` a `II≈1` y validaría el modelo
+original de 8,29 ms sin tocar la aritmética ni el resultado.
 
 ### 10.4 Diferencia arquitectónica en el camino de datos
 
@@ -642,11 +740,33 @@ anterior.
 
 ### 11.2 Parte de implementación en HLS
 
-> ⬜ **Pendiente — obligatorio.** El equipo encargado de la implementación en HLS debe completar
-> esta subsección indicando si empleó herramientas de Inteligencia Artificial, con qué propósito
-> y los *prompts* representativos. El enunciado establece que **la omisión de esta declaración
-> implica la aplicación de la normativa de plagio**; si no se utilizaron dichas herramientas,
-> debe indicarse explícitamente.
+Se utilizó **Claude (Anthropic)** como asistente durante el desarrollo de la
+implementación en HLS, con los siguientes propósitos:
+
+- **Generación de código base.** A partir del núcleo de conversión de la evaluación
+  anterior (coeficientes BT.601 enteros), se generó con asistencia el kernel
+  sintetizable ([`hls/src/rgb2gray.cpp`](hls/src/rgb2gray.cpp)) con la arquitectura
+  `DATAFLOW` de tres etapas (load/compute/store), el testbench en C para
+  co-simulación ([`hls/tb/tb_rgb2gray.cpp`](hls/tb/tb_rgb2gray.cpp)) y el script TCL
+  del flujo ([`hls/scripts/run_hls.tcl`](hls/scripts/run_hls.tcl)).
+  *Prompt representativo:* «escribir un kernel de Vitis HLS que convierta RGB a
+  escala de grises con pipeline DATAFLOW separando E/S y procesamiento, interfaz
+  AXI4 Master para datos y AXI4-Lite para control, usando la misma aritmética
+  entera `(77·R+150·G+29·B)>>8` para lograr equivalencia bit a bit».
+
+- **Consulta de conceptos.** Selección de pragmas de interfaz (`m_axi offset=slave`,
+  `s_axilite`), configuración del *part* de la KV260 y el reloj de 250 MHz en el
+  flujo TCL.
+
+- **Generación de diagramas y redacción.** El diagrama de bloques del pipeline HLS y
+  la redacción de [`hls/README.md`](hls/README.md) y de las secciones de este
+  documento relativas a HLS se elaboraron con asistencia a partir del código.
+
+Todo el código fue revisado por el equipo y **verificado ejecutando el flujo real de
+Vitis HLS** (simulación C, síntesis y co-simulación C/RTL): los resultados de síntesis
+(§9.8) y la equivalencia bit a bit (§10.1) provienen de corridas reales de la
+herramienta, no de estimaciones. La fórmula de conversión proviene del trabajo propio
+de la evaluación anterior.
 
 ---
 
