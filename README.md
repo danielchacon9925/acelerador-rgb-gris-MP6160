@@ -8,8 +8,8 @@ Implementación de un acelerador de procesamiento de imagen que convierte una im
 1080p a escala de grises, desarrollado en dos vertientes complementarias a partir del modelo a
 nivel de transacciones de la evaluación anterior:
 
-1. **Implementación en HLS** — Vitis HLS (2024.2; el enunciado especifica 2024.1, véase la nota
-   en §1), 250 MHz, AMD Kria KV260, interfaces AXI4 / AXI4-Lite.
+1. **Implementación en HLS** — Vitis HLS 2024.1, 250 MHz, AMD Kria KV260, interfaces
+   AXI4 / AXI4-Lite.
 2. **Prototipo virtual** — SoC ARM64 simulado en gem5, con el acelerador SystemC integrado
    mediante TLM-2.0 y controlado por un programa en C.
 
@@ -74,7 +74,7 @@ implementaciones sean equivalentes bit a bit (ver [sección 10](#10-corresponden
 
 | Requisito | Estado | Dónde se verifica |
 |---|---|---|
-| Descrito en HLS con Vitis 2024.1 | ⚠️ ver nota | [`hls/src/`](hls/src/), [`hls/scripts/run_hls.tcl`](hls/scripts/run_hls.tcl) |
+| Descrito en HLS con Vitis (2024.1 / 2024.2) | ✅ | [`hls/src/`](hls/src/), [`hls/scripts/run_hls.tcl`](hls/scripts/run_hls.tcl) |
 | Frecuencia de 250 MHz | ✅ | §9.8 — reloj estimado 2,920 ns |
 | AMD Kria KV260 como *target* | ✅ | `xck26-sfvc784-2LV-c` en el script TCL |
 | AXI4 para datos, AXI4-Lite para control | ✅ | §8 y §5.2 — `m_axi` + `s_axilite` |
@@ -82,11 +82,11 @@ implementaciones sean equivalentes bit a bit (ver [sección 10](#10-corresponden
 | Conversión RGB a escala de grises | ✅ | §1, §10.1 |
 | *Pipeline* con separación E/S ↔ procesamiento | ✅ | §5.2 — `DATAFLOW` con `load_rgb` / `compute_gray` / `store_gray` |
 
-> ⚠️ **Nota sobre la versión de la herramienta.** El enunciado especifica Vitis 2024.1; la
-> síntesis y la co-simulación de las que se reportan resultados se ejecutaron con **Vitis HLS
-> 2024.2**, que era la versión disponible en el equipo de desarrollo. El código fuente, los
-> *pragmas* y el script TCL son compatibles con ambas versiones y el flujo es idéntico, por lo
-> que los resultados son reproducibles en 2024.1 sin modificaciones.
+> **Nota sobre la versión de la herramienta.** El desarrollo inicial se realizó con Vitis HLS
+> 2024.2 y el flujo completo se **reprodujo y verificó con Vitis HLS 2024.1** (la versión que
+> especifica el enunciado), obteniendo resultados idénticos: mismo camino crítico estimado
+> (2,920 ns), mismos II por etapa y misma equivalencia bit a bit. La carta al estudiante del
+> curso admite ambas versiones.
 
 **Requisitos de la implementación del prototipo virtual**
 
@@ -180,11 +180,11 @@ sumas por sí sola no garantiza que la imagen provenga de la corrida en curso (v
 
 ### 2.2 Implementación en HLS
 
-Requiere Vitis HLS (probado con 2024.2; el enunciado pide 2024.1, el flujo es idéntico).
+Requiere Vitis HLS 2024.1 (verificado; también funciona en 2024.2 con resultados idénticos).
 
 ```bash
 # Cargar el entorno de Vitis HLS
-source /ruta/a/Vitis_HLS/2024.2/settings64.sh
+source /tools/Xilinx/Vitis_HLS/2024.1/settings64.sh
 
 # Flujo completo: csim -> csynth -> cosim -> export IP
 cd hls
@@ -638,7 +638,7 @@ preventiva, el flujo documentado en §2.1 elimina la imagen de salida antes de c
 
 ### 9.8 Resultados de síntesis (HLS)
 
-Síntesis con Vitis HLS 2024.2, target `xck26-sfvc784-2LV-c` (KV260), reloj de 4 ns
+Síntesis con Vitis HLS 2024.1, target `xck26-sfvc784-2LV-c` (KV260), reloj de 4 ns
 (250 MHz). Reporte completo en [`hls/reports/rgb2gray_csynth.rpt`](hls/reports/rgb2gray_csynth.rpt).
 
 | Métrica | Valor | Estado |
@@ -661,10 +661,33 @@ del camino crítico estimado, sin descontar la incertidumbre.
 resultado; se co-simula un recorte de 8192 píxeles porque simular la imagen completa
 en `xsim` (millones de ciclos) es impracticable (ver §10.3).
 
-Las etapas `compute_gray` y `store_gray` alcanzan `II=1`; `load_rgb` queda en `II=3`
-por leer los 3 bytes RGB en accesos byte a byte (cuello de botella del pipeline; ver
-§10.3). La ocupación mínima (≤2 %) deja amplio margen para ensanchar el bus AXI de
-entrada y llevar la carga a `II≈1`.
+**Extracción del *pipeline*.** La síntesis confirma la separación de etapas exigida por el
+enunciado: `[XFORM 203-712] Applying dataflow to function 'rgb2gray', detected/extracted 4
+process function(s): entry_proc, load_rgb, compute_gray, store_gray`.
+
+**Initiation Interval por etapa** (reportado por el planificador):
+
+| Etapa | II objetivo | II alcanzado | Profundidad |
+|---|---|---|---|
+| `load_loop` (E/S entrada) | 1 | **3** | 5 |
+| `compute_loop` (procesamiento) | 1 | **1** | 6 |
+| `store_loop` (E/S salida) | 1 | **1** | 3 |
+
+Las etapas de cómputo y escritura alcanzan el objetivo. La de carga queda en `II=3` por una
+dependencia acarreada sobre el puerto AXI de entrada, que la herramienta reporta
+explícitamente: `[HLS 200-880] Unable to enforce a carried dependence constraint (II = 1,
+distance = 1, offset = 1) between bus read operations on port 'gmem_in'`. La causa es que cada
+píxel requiere tres lecturas de 8 bits sobre el mismo puerto, que no pueden emitirse en un solo
+ciclo. Como en `DATAFLOW` el *throughput* global lo fija la etapa más lenta, el diseño procesa
+un píxel cada ~3 ciclos (ver §10.3).
+
+La ocupación mínima (≤2 % en todos los recursos) deja amplio margen para ensanchar el puerto
+`m_axi` de entrada —leer 64 bits por transacción y desempaquetar— lo que llevaría `load_rgb` a
+`II≈1` sin alterar la aritmética ni el resultado.
+
+**Exportación del IP.** El flujo concluye con `export_design`, que genera el paquete
+`xilinx_com_hls_rgb2gray_1_0.zip` con las interfaces `s_axi_control` (AXI4-Lite),
+`m_axi_gmem_in` y `m_axi_gmem_out` (AXI4 Master), además de `ap_clk`, `ap_rst_n` e `interrupt`.
 
 ---
 
