@@ -82,12 +82,6 @@ implementaciones sean equivalentes bit a bit (ver [sección 10](#10-corresponden
 | Conversión RGB a escala de grises | ✅ | Sec. 1, Sec. 10.1 |
 | *Pipeline* con separación E/S ↔ procesamiento | ✅ | Sec. 5.2 — `DATAFLOW` con `load_rgb` / `compute_gray` / `store_gray` |
 
-> **Nota sobre la versión de la herramienta.** El desarrollo inicial se realizó con Vitis HLS
-> 2024.2 y el flujo completo se **reprodujo y verificó con Vitis HLS 2024.1** (la versión que
-> especifica el enunciado), obteniendo resultados idénticos: mismo camino crítico estimado
-> (2,920 ns), mismos II por etapa y misma equivalencia bit a bit. La carta al estudiante del
-> curso admite ambas versiones.
-
 **Requisitos de la implementación del prototipo virtual**
 
 | Requisito | Estado | Dónde se verifica |
@@ -180,7 +174,7 @@ sumas por sí sola no garantiza que la imagen provenga de la corrida en curso (v
 
 ### 2.2 Implementación en HLS
 
-Requiere Vitis HLS 2024.1 (verificado; también funciona en 2024.2 con resultados idénticos).
+Requiere Vitis HLS 2024.1.
 
 ```bash
 # Cargar el entorno de Vitis HLS
