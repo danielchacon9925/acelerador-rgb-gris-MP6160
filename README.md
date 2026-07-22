@@ -646,10 +646,10 @@ Síntesis con Vitis HLS 2024.1, target `xck26-sfvc784-2LV-c` (KV260), reloj de 4
 | Reloj objetivo | 4.00 ns (250 MHz) | — |
 | Incertidumbre | 1.08 ns → restricción efectiva 2.92 ns | — |
 | Reloj estimado | 2.920 ns → **Fmax ≈ 342 MHz** | ✅ cumple |
-| BRAM_18K | 5 / 288 (1 %) | ✅ |
+| BRAM_18K | 4 / 288 (1 %) | ✅ |
 | DSP | 2 / 1248 (~0 %) | ✅ |
-| FF | 2 645 / 234 240 (1 %) | ✅ |
-| LUT | 3 434 / 117 120 (2 %) | ✅ |
+| FF | 2 545 / 234 240 (1 %) | ✅ |
+| LUT | 3 463 / 117 120 (2 %) | ✅ |
 
 El camino crítico estimado (2,920 ns) satisface exactamente la restricción efectiva
 (4,00 − 1,08 = 2,92 ns), por lo que el requisito de 250 MHz se cumple, si bien con holgura
