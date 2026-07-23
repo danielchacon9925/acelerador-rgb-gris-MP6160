@@ -832,27 +832,23 @@ anterior.
 
 ### 11.2 Parte de implementación en HLS
 
-Se utilizó **Claude (Anthropic)** como asistente durante el desarrollo de la
-implementación en HLS, con los siguientes propósitos:
+La implementación en HLS se desarrolló **en conjunto con una IA** (Claude, de
+Anthropic), utilizada con los siguientes propósitos:
 
-- **Generación de código base.** A partir del núcleo de conversión de la evaluación
-  anterior (coeficientes BT.601 enteros), se generó con asistencia el kernel
-  sintetizable ([`hls/src/rgb2gray.cpp`](hls/src/rgb2gray.cpp)) con la arquitectura
-  `DATAFLOW` de tres etapas (load/compute/store), el testbench en C para
-  co-simulación ([`hls/tb/tb_rgb2gray.cpp`](hls/tb/tb_rgb2gray.cpp)) y el script TCL
-  del flujo ([`hls/scripts/run_hls.tcl`](hls/scripts/run_hls.tcl)).
-  *Prompt representativo:* «escribir un kernel de Vitis HLS que convierta RGB a
-  escala de grises con pipeline DATAFLOW separando E/S y procesamiento, interfaz
-  AXI4 Master para datos y AXI4-Lite para control, usando la misma aritmética
-  entera `(77·R+150·G+29·B)>>8` para lograr equivalencia bit a bit».
+- **Consulta de conceptos.** Dudas puntuales sobre el flujo de Vitis HLS: pragmas de
+  interfaz (`m_axi offset=slave`, `s_axilite`), uso de `DATAFLOW` con streams, y la
+  configuración del *part* de la KV260 y el reloj de 250 MHz en el flujo TCL.
 
-- **Consulta de conceptos.** Selección de pragmas de interfaz (`m_axi offset=slave`,
-  `s_axilite`), configuración del *part* de la KV260 y el reloj de 250 MHz en el
-  flujo TCL.
+- **Generación y redacción, así como algunos comentarios.** Se usó asistencia para
+  generar y redactar partes del código ([`hls/src/rgb2gray.cpp`](hls/src/rgb2gray.cpp),
+  [`hls/tb/tb_rgb2gray.cpp`](hls/tb/tb_rgb2gray.cpp),
+  [`hls/scripts/run_hls.tcl`](hls/scripts/run_hls.tcl)), algunos de sus comentarios,
+  y la documentación ([`hls/README.md`](hls/README.md) y las secciones de este
+  documento relativas a HLS).
 
-- **Generación de diagramas y redacción.** El diagrama de bloques del pipeline HLS y
-  la redacción de [`hls/README.md`](hls/README.md) y de las secciones de este
-  documento relativas a HLS se elaboraron con asistencia a partir del código.
+- **Guía durante el desarrollo.** Orientación paso a paso a la hora de hacer algo
+  concreto: armar el flujo TCL (csim → csynth → cosim → export), interpretar los
+  reportes de síntesis y dimensionar la co-simulación con un recorte de la imagen.
 
 Todo el código fue revisado por el equipo y **verificado ejecutando el flujo real de
 Vitis HLS** (simulación C, síntesis y co-simulación C/RTL): los resultados de síntesis
