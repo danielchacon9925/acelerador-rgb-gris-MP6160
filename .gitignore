@@ -17,17 +17,6 @@ hls/tb/vectors/out_crop_hls.raw
 vitis_hls.log
 *.tcl.log
 
-# ---- LaTeX ----
-docs/reporte/*.aux
-docs/reporte/*.log
-docs/reporte/*.out
-docs/reporte/*.toc
-docs/reporte/*.lof
-docs/reporte/*.lot
-docs/reporte/*.fls
-docs/reporte/*.fdb_latexmk
-docs/reporte/*.synctex.gz
-
 # ---- guias explicativas (no se versionan) ----
 docs/GUIA_*.md
 
